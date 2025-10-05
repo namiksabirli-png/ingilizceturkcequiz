@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>İngilizce - Türkçe Çalışma</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 10px;
+      text-align: center;
+      background: #f9fafb;
+    }
+    h1 { font-size: 1.4em; margin-bottom: 12px; }
+    button {
+      margin: 6px 4px;
+      padding: 10px 14px;
+      font-size: 0.95em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #0284c7;
+      color: #fff;
+      width: 95%;
+      max-width: 280px;
+      display: inline-block;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    #infoTable {
+      margin: 15px auto;
+      border-collapse: collapse;
+      display: none;
+      width: 95%;
+      font-size: 0.9em;
+    }
+    #infoTable th, #infoTable td {
+      border: 1px solid #444;
+      padding: 6px;
+      cursor: pointer;
+    }
+    #infoTable tbody tr:nth-child(odd){background:#f1f5f9;}
+    #infoTable tbody tr:nth-child(even){background:#e2e8f0;}
+
+    .option {
+      display: block;
+      margin: 6px auto;
+      padding: 10px;
+      width: 95%;
+      max-width: 360px;
+      border: 1px solid #888;
+      border-radius: 6px;
+      text-align: center;
+      background: #fff;
+      color: #000;
+      font-weight: 600;
+      font-size: 0.95em;
+    }
+    .correct { background: green; color:#fff; }
+    .wrong { background: red; color:#fff; }
+    .reveal { background: blue !important; color:#fff !important; }
+
+    #quizArea { display:none; max-width:600px; margin:0 auto; }
+    #question { font-size: 1.1em; margin: 12px 0; }
+    #progress, #scoreTrack { margin: 6px 0; font-size: 0.9em; color:#334155; }
+    #result { display:none; margin-top: 15px; }
+    #setResult { font-size: 1em; margin-bottom: 8px; }
+    #wrongList { white-space: pre-wrap; margin-top: 8px; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h1>İngilizce - Türkçe Çalışma</h1>
+
+  <button onclick="showInfo('sentences')">📖 Bilgi Oku – Cümleler</button>
+  <button onclick="showInfo('verbs')">📖 Bilgi Oku – Fiiller</button>
+  <button onclick="showInfo('adjectives')">📖 Bilgi Oku – İsim/Sıfat/Zarf</button>
+  <br/>
+  <button onclick="startAll('sentences')">📝 Alıştırma – Cümleler</button>
+  <button onclick="startAll('verbs')">📝 Alıştırma – Fiiller</button>
+  <button onclick="startAll('adjectives')">📝 Alıştırma – İsim/Sıfat/Zarf</button>
+  <br/>
+
+  <button id="nextSetBtn" style="display:none;" onclick="startSet()">▶️ Sonraki Set</button>
+  <button id="checkWrongBtn" style="display:none;" onclick="reviewWrongs()">🔄 Yanlışları Kontrol Et</button>
+
+  <table id="infoTable" aria-label="İngilizce-Türkçe Kelime Listesi">
+    <thead><tr><th>English</th><th>Türkçe</th></tr></thead>
+    <tbody id="infoBody"></tbody>
+  </table>
+
+  <div id="quizArea">
+    <h2 id="question"></h2>
+    <div id="options"></div>
+    <p id="progress"></p>
+    <p id="scoreTrack"></p>
+  </div>
+
+  <div id="result">
+    <h2 id="setResult"></h2>
+    <div id="wrongList"></div>
+  </div>
+
+<script>
+const sentences = [
+  {en:"Hello.", tr:"Merhaba."},
+{en:"How are you?", tr:"Nasılsın?"},
+{en:"I am fine, thank you.", tr:"İyiyim, teşekkür ederim."},
+{en:"What is your name?", tr:"Adın ne?"},
+{en:"My name is…", tr:"Benim adım…"},
+{en:"Nice to meet you.", tr:"Tanıştığımıza memnun oldum."},
+{en:"Where are you from?", tr:"Nerelisin?"},
+{en:"I am from Turkey.", tr:"Ben Türkiye'denim."},
+{en:"How old are you?", tr:"Kaç yaşındasın?"},
+{en:"I am … years old.", tr:"… yaşındayım."},
+{en:"What do you do?", tr:"Ne iş yapıyorsun?"},
+{en:"I am a student.", tr:"Öğrenciyim."},
+{en:"Do you speak English?", tr:"İngilizce konuşuyor musun?"},
+{en:"Yes, a little.", tr:"Evet, biraz."},
+{en:"No, I don't.", tr:"Hayır, konuşmam."},
+{en:"Can you help me?", tr:"Bana yardım eder misin?"},
+{en:"Where is the bathroom?", tr:"Tuvalet nerede?"},
+{en:"I don't understand.", tr:"Anlamıyorum."},
+{en:"Please speak slowly.", tr:"Lütfen yavaş konuş."},
+{en:"What time is it?", tr:"Saat kaç?"},
+{en:"I like it.", tr:"Bunu seviyorum."},
+{en:"I don't like it.", tr:"Bunu sevmiyorum."},
+{en:"Excuse me.", tr:"Affedersiniz."},
+{en:"Sorry.", tr:"Üzgünüm."},
+{en:"Thank you.", tr:"Teşekkür ederim."},
+{en:"You're welcome.", tr:"Rica ederim."},
+{en:"How much is this?", tr:"Bu ne kadar?"},
+{en:"I want this.", tr:"Bunu istiyorum."},
+{en:"I need help.", tr:"Yardıma ihtiyacım var."},
+{en:"Where is the bus stop?", tr:"Otobüs durağı nerede?"},
+{en:"I am hungry.", tr:"Açım."},
+{en:"I am thirsty.", tr:"Susadım."},
+{en:"What is this?", tr:"Bu nedir?"},
+{en:"Can I have the menu?", tr:"Menü alabilir miyim?"},
+{en:"I don't know.", tr:"Bilmiyorum."},
+{en:"I am tired.", tr:"Yorgunum."},
+{en:"Let's go.", tr:"Hadi gidelim."},
+{en:"See you later.", tr:"Sonra görüşürüz."},
+{en:"Good morning.", tr:"Günaydın."},
+{en:"Good night.", tr:"İyi geceler."},
+{en:"I love you.", tr:"Seni seviyorum."},
+{en:"What's your phone number?", tr:"Telefon numaran ne?"},
+{en:"Where do you live?", tr:"Nerede yaşıyorsun?"},
+{en:"I live in Istanbul.", tr:"İstanbul'da yaşıyorum."},
+{en:"Can I ask you a question?", tr:"Sana bir soru sorabilir miyim?"},
+{en:"I am sorry, I'm late.", tr:"Üzgünüm, geç kaldım."},
+{en:"What's the weather like?", tr:"Hava nasıl?"},
+{en:"It's hot.", tr:"Hava sıcak."},
+{en:"It's cold.", tr:"Hava soğuk."},
+{en:"Have a nice day!", tr:"İyi günler!"},
+{en:"Where are you going?", tr:"Nereye gidiyorsun?"},
+{en:"I am going to school.", tr:"Okula gidiyorum."},
+{en:"What is your favorite color?", tr:"En sevdiğin renk nedir?"},
+{en:"My favorite color is blue.", tr:"En sevdiğim renk mavi."},
+{en:"Do you like music?", tr:"Müzik sever misin?"},
+{en:"Yes, I like music.", tr:"Evet, müzik severim."},
+{en:"No, I don't like music.", tr:"Hayır, müzik sevmem."},
+{en:"Can you swim?", tr:"Yüzebilir misin?"},
+{en:"Yes, I can swim.", tr:"Evet, yüzebilirim."},
+{en:"No, I can't swim.", tr:"Hayır, yüzemem."},
+{en:"What do you want to eat?", tr:"Ne yemek istiyorsun?"},
+{en:"I want to eat pizza.", tr:"Pizza yemek istiyorum."},
+{en:"Where do you work?", tr:"Nerede çalışıyorsun?"},
+{en:"I work in a hospital.", tr:"Hastanede çalışıyorum."},
+{en:"What is your hobby?", tr:"Hobin nedir?"},
+{en:"My hobby is reading.", tr:"Hobim okumak."},
+{en:"Do you have a pet?", tr:"Evcil hayvanın var mı?"},
+{en:"Yes, I have a dog.", tr:"Evet, bir köpeğim var."},
+{en:"No, I don't have a pet.", tr:"Hayır, evcil hayvanım yok."},
+{en:"What is this called?", tr:"Buna ne denir?"},
+{en:"It is called a chair.", tr:"Buna sandalye denir."},
+{en:"Can I help you?", tr:"Sana yardım edebilir miyim?"},
+{en:"Yes, please.", tr:"Evet, lütfen."},
+{en:"No, thank you.", tr:"Hayır, teşekkürler."},
+{en:"How do you say this in English?", tr:"Bunun İngilizcesi nasıl söylenir?"},
+{en:"I am learning English.", tr:"İngilizce öğreniyorum."},
+{en:"What is your favorite food?", tr:"En sevdiğin yemek nedir?"},
+{en:"My favorite food is pasta.", tr:"En sevdiğim yemek makarna."},
+{en:"Do you like to travel?", tr:"Seyahat etmeyi sever misin?"},
+{en:"Yes, I love to travel.", tr:"Evet, seyahat etmeyi severim."},
+{en:"No, I don't like to travel.", tr:"Hayır, seyahat etmeyi sevmem."},
+{en:"Can you repeat, please?", tr:"Tekrar eder misin, lütfen?"},
+{en:"I am happy.", tr:"Mutluyum."},
+{en:"I am sad.", tr:"Üzgünüm."},
+{en:"What is your favorite movie?", tr:"En sevdiğin film nedir?"},
+{en:"My favorite movie is…", tr:"En sevdiğim film…"},
+{en:"Do you have brothers or sisters?", tr:"Kardeşin var mı?"},
+{en:"Yes, I have one brother.", tr:"Evet, bir erkek kardeşim var."},
+{en:"No, I am an only child.", tr:"Hayır, tek çocuğum."},
+{en:"What is your address?", tr:"Adresin nedir?"},
+{en:"I live at…", tr:"… adresinde yaşıyorum."},
+{en:"Can you write it down?", tr:"Yazabilir misin?"},
+{en:"I like to listen to music.", tr:"Müzik dinlemeyi severim."},
+{en:"What is your favorite sport?", tr:"En sevdiğin spor nedir?"},
+{en:"My favorite sport is football.", tr:"En sevdiğim spor futbol."},
+{en:"How do you feel today?", tr:"Bugün nasıl hissediyorsun?"},
+{en:"I feel good.", tr:"İyi hissediyorum."},
+{en:"I feel tired.", tr:"Yorgun hissediyorum."},
+{en:"Have a good weekend!", tr:"İyi hafta sonları!"},
+{en:"What is your favorite book?", tr:"En sevdiğin kitap nedir?"},
+{en:"I like to watch TV.", tr:"Televizyon izlemeyi severim."},
+{en:"Where do you study?", tr:"Nerede okuyorsun?"},
+{en:"I study at university.", tr:"Üniversitede okuyorum."},
+{en:"Can you drive a car?", tr:"Araba kullanabilir misin?"},
+{en:"Yes, I can drive.", tr:"Evet, araba kullanabilirim."},
+{en:"No, I can't drive.", tr:"Hayır, araba kullanamam."},
+{en:"What is your favorite animal?", tr:"En sevdiğin hayvan nedir?"},
+{en:"My favorite animal is a cat.", tr:"En sevdiğim hayvan kedi."},
+{en:"Do you like coffee?", tr:"Kahve sever misin?"},
+{en:"Yes, I like coffee.", tr:"Evet, kahve severim."},
+{en:"No, I don't like coffee.", tr:"Hayır, kahve sevmem."},
+{en:"What do you want to drink?", tr:"Ne içmek istersin?"},
+{en:"I want water.", tr:"Su istiyorum."},
+{en:"How do you go to work?", tr:"İşe nasıl gidiyorsun?"},
+{en:"I go by bus.", tr:"Otobüsle gidiyorum."},
+{en:"What is your favorite season?", tr:"En sevdiğin mevsim nedir?"},
+{en:"My favorite season is summer.", tr:"En sevdiğim mevsim yaz."},
+{en:"Do you like to cook?", tr:"Yemek yapmayı sever misin?"},
+{en:"Yes, I like cooking.", tr:"Evet, yemek yapmayı severim."},
+{en:"No, I don't like cooking.", tr:"Hayır, yemek yapmayı sevmem."},
+{en:"What time do you wake up?", tr:"Saat kaçta uyanıyorsun?"},
+{en:"I wake up at 7 o'clock.", tr:"Saat 7'de uyanıyorum."},
+{en:"Do you have a car?", tr:"Araban var mı?"},
+{en:"Yes, I have a car.", tr:"Evet, arabam var."},
+{en:"No, I don't have a car.", tr:"Hayır, arabam yok."},
+{en:"What is your favorite music?", tr:"En sevdiğin müzik türü nedir?"},
+{en:"I like pop music.", tr:"Pop müziği severim."},
+{en:"Can you play the piano?", tr:"Piyano çalabilir misin?"},
+{en:"Yes, I can play the piano.", tr:"Evet, piyano çalabilirim."},
+{en:"No, I can't play the piano.", tr:"Hayır, piyano çalamam."},
+{en:"What do you do on weekends?", tr:"Hafta sonları ne yaparsın?"},
+{en:"I like to relax.", tr:"Dinlenmeyi severim."},
+{en:"Do you like to read books?", tr:"Kitap okumayı sever misin?"},
+{en:"Yes, I love reading.", tr:"Evet, okumayı çok severim."},
+{en:"No, I don't like reading.", tr:"Hayır, okumayı sevmem."},
+{en:"Where is your school?", tr:"Okulun nerede?"},
+{en:"My school is near my house.", tr:"Okulum evimin yakınında."},
+{en:"What is your favorite drink?", tr:"En sevdiğin içecek nedir?"},
+{en:"I like juice.", tr:"Meyve suyu severim."},
+{en:"Can you come to my party?", tr:"Partime gelebilir misin?"},
+{en:"Yes, I can come.", tr:"Evet, gelebilirim."},
+{en:"No, I can't come.", tr:"Hayır, gelemem."},
+{en:"How many brothers do you have?", tr:"Kaç erkek kardeşin var?"},
+{en:"I have two brothers.", tr:"İki erkek kardeşim var."},
+{en:"What is your favorite city?", tr:"En sevdiğin şehir nedir?"},
+{en:"My favorite city is London.", tr:"En sevdiğim şehir Londra."},
+{en:"Do you like to dance?", tr:"Dans etmeyi sever misin?"},
+{en:"Yes, I like dancing.", tr:"Evet, dans etmeyi severim."},
+{en:"No, I don't like dancing.", tr:"Hayır, dans etmeyi sevmem."},
+{en:"What is your favorite fruit?", tr:"En sevdiğin meyve nedir?"},
+{en:"My favorite fruit is apple.", tr:"En sevdiğim meyve elma."},
+{en:"Do you like to play football?", tr:"Futbol oynamayı sever misin?"},
+{en:"Yes, I like football.", tr:"Evet, futbolu severim."},
+{en:"No, I don't like football.", tr:"Hayır, futbolu sevmem."},
+{en:"I live in a big city.", tr:"Büyük bir şehirde yaşıyorum."},
+{en:"What is your favorite subject?", tr:"En sevdiğin ders nedir?"},
+{en:"My favorite subject is math.", tr:"En sevdiğim ders matematik."},
+{en:"Can you speak slowly?", tr:"Yavaş konuşabilir misin?"},
+{en:"I like to watch movies.", tr:"Film izlemeyi severim."},
+{en:"My favorite movie is comedy.", tr:"En sevdiğim film komedi."},
+{en:"Do you have a computer?", tr:"Bilgisayarın var mı?"},
+{en:"Yes, I have a computer.", tr:"Evet, bilgisayarım var."},
+{en:"No, I don't have a computer.", tr:"Hayır, bilgisayarım yok."},
+{en:"What do you want to do today?", tr:"Bugün ne yapmak istiyorsun?"},
+{en:"I want to go shopping.", tr:"Alışverişe gitmek istiyorum."},
+{en:"How do you feel?", tr:"Nasıl hissediyorsun?"},
+{en:"I feel happy.", tr:"Mutluyum."},
+{en:"I feel sad.", tr:"Üzgünüm."},
+{en:"I like tea.", tr:"Çay severim."},
+{en:"What time do you go to bed?", tr:"Kaçta yatıyorsun?"},
+{en:"I go to bed at 10 o'clock.", tr:"Saat 10'da yatıyorum."},
+{en:"What is your favorite restaurant?", tr:"En sevdiğin restoran hangisi?"},
+{en:"My favorite restaurant is near my house.", tr:"En sevdiğim restoran evimin yakınında."},
+{en:"My favorite sport is basketball.", tr:"En sevdiğim spor basketbol."},
+{en:"Can you play football?", tr:"Futbol oynayabilir misin?"},
+{en:"Yes, I can play football.", tr:"Evet, futbol oynayabilirim."},
+{en:"No, I can't play football.", tr:"Hayır, futbol oynayamam."},
+{en:"Where do you want to go?", tr:"Nereye gitmek istiyorsun?"},
+{en:"I want to go to the park.", tr:"Parka gitmek istiyorum."},
+{en:"What is your favorite day?", tr:"En sevdiğin gün hangisi?"},
+{en:"My favorite day is Sunday.", tr:"En sevdiğim gün Pazar."},
+{en:"Have a nice trip!", tr:"İyi yolculuklar!"},
+{en:"What do you like to do?", tr:"Ne yapmayı seversin?"},
+{en:"I like to play games.", tr:"Oyun oynamayı severim."},
+{en:"Where is your school?", tr:"Okulun nerede?"},
+{en:"My school is near the park.", tr:"Okulum parkın yakınında."},
+{en:"Do you have a pet?", tr:"Evcil hayvanın var mı?"},
+{en:"Yes, I have a cat.", tr:"Evet, bir kedim var."},
+{en:"No, I don't have any pets.", tr:"Hayır, evcil hayvanım yok."},
+{en:"What is your favorite subject?", tr:"En sevdiğin ders nedir?"},
+{en:"I like science.", tr:"Fen bilimlerini severim."},
+{en:"Can you help me with this?", tr:"Bana bununla yardım eder misin?"},
+{en:"I am learning English every day.", tr:"Her gün İngilizce öğreniyorum."},
+{en:"What do you want to be?", tr:"Ne olmak istiyorsun?"},
+{en:"I want to be a teacher.", tr:"Öğretmen olmak istiyorum."},
+{en:"How do you go to school?", tr:"Okula nasıl gidiyorsun?"},
+{en:"I go by bike.", tr:"Bisikletle gidiyorum."},
+{en:"What time do you finish school?", tr:"Okul ne zaman bitiyor?"},
+{en:"School finishes at 3 o'clock.", tr:"Okul saat 3'te bitiyor."},
+{en:"Do you like to read books?", tr:"Kitap okumayı sever misin?"},
+{en:"Yes, I love reading stories.", tr:"Evet, hikaye okumayı çok severim."},
+{en:"No, I prefer watching TV.", tr:"Hayır, televizyon izlemeyi tercih ederim."},
+{en:"What is your favorite food?", tr:"En sevdiğin yemek nedir?"},
+{en:"I like pizza and pasta.", tr:"Pizza ve makarnayı severim."},
+{en:"Can you cook?", tr:"Yemek yapabilir misin?"},
+{en:"Yes, I can cook simple meals.", tr:"Evet, basit yemekler yapabilirim."},
+{en:"No, I don't know how to cook.", tr:"Hayır, yemek yapmayı bilmiyorum."},
+{en:"What do you do on weekends?", tr:"Hafta sonları ne yaparsın?"},
+{en:"I like to visit my friends.", tr:"Arkadaşlarımı ziyaret etmeyi severim."},
+{en:"Do you play any sports?", tr:"Spor yapıyor musun?"},
+{en:"Yes, I play football.", tr:"Evet, futbol oynuyorum."},
+{en:"No, I don't play sports.", tr:"Hayır, spor yapmam."},
+{en:"What is your favorite color?", tr:"En sevdiğin renk nedir?"},
+{en:"My favorite color is green.", tr:"En sevdiğim renk yeşil."},
+{en:"Do you have any brothers or sisters?", tr:"Kardeşin var mı?"},
+{en:"Yes, I have one sister.", tr:"Evet, bir kız kardeşim var."},
+{en:"No, I am an only child.", tr:"Hayır, tek çocuğum."},
+{en:"What do you like to watch on TV?", tr:"Televizyonda ne izlemeyi seversin?"},
+{en:"I like cartoons.", tr:"Çizgi filmleri severim."},
+{en:"What is your favorite movie?", tr:"En sevdiğin film nedir?"},
+{en:"I like comedies.", tr:"Komedi filmlerini severim."},
+{en:"Can you play a musical instrument?", tr:"Müzik aleti çalabilir misin?"},
+{en:"Yes, I play the guitar.", tr:"Evet, gitar çalıyorum."},
+{en:"No, I don't play any instruments.", tr:"Hayır, müzik aleti çalmıyorum."},
+{en:"What time do you wake up?", tr:"Saat kaçta uyanıyorsun?"},
+{en:"I wake up at 7 a.m.", tr:"Sabah 7'de uyanıyorum."},
+{en:"Do you like to travel?", tr:"Seyahat etmeyi sever misin?"},
+{en:"Yes, I love to travel.", tr:"Evet, seyahat etmeyi çok severim."},
+{en:"No, I prefer to stay home.", tr:"Hayır, evde kalmayı tercih ederim."},
+{en:"Where would you like to go?", tr:"Nereye gitmek istersin?"},
+{en:"I want to visit Paris.", tr:"Paris'i ziyaret etmek istiyorum."},
+{en:"What is your favorite season?", tr:"En sevdiğin mevsim nedir?"},
+{en:"I like summer because it's warm.", tr:"Yazı severim çünkü sıcak olur."},
+{en:"Do you like the rain?", tr:"Yağmuru sever misin?"},
+{en:"Yes, I like rainy days.", tr:"Evet, yağmurlu günleri severim."},
+{en:"No, I prefer sunny days.", tr:"Hayır, güneşli günleri tercih ederim."},
+{en:"What do you do after school?", tr:"Okuldan sonra ne yaparsın?"},
+{en:"I do my homework.", tr:"Ödevimi yaparım."},
+{en:"Do you have a best friend?", tr:"En iyi arkadaşın var mı?"},
+{en:"Yes, my best friend is Ali.", tr:"Evet, en iyi arkadaşım Ali."},
+{en:"No, I don't have a best friend.", tr:"Hayır, en iyi arkadaşım yok."},
+{en:"What is your favorite animal?", tr:"En sevdiğin hayvan nedir?"},
+{en:"I like dogs.", tr:"Köpekleri severim."},
+{en:"Do you like to draw?", tr:"Resim yapmayı sever misin?"},
+{en:"Yes, I like drawing.", tr:"Evet, resim yapmayı severim."},
+{en:"No, I don't like drawing.", tr:"Hayır, resim yapmayı sevmem."},
+{en:"What is your favorite holiday?", tr:"En sevdiğin tatil hangisi?"},
+{en:"I like summer holidays.", tr:"Yaz tatillerini severim."},
+{en:"Do you like to swim?", tr:"Yüzmeyi sever misin?"},
+{en:"Yes, I love swimming.", tr:"Evet, yüzmeyi çok severim."},
+{en:"No, I don't like swimming.", tr:"Hayır, yüzmeyi sevmem."},
+{en:"What do you want to do tomorrow?", tr:"Yarın ne yapmak istiyorsun?"},
+{en:"I want to go to the park.", tr:"Parka gitmek istiyorum."},
+{en:"Do you like to listen to music?", tr:"Müzik dinlemeyi sever misin?"},
+{en:"Yes, I listen to music every day.", tr:"Evet, her gün müzik dinlerim."},
+{en:"No, I don't like music.", tr:"Hayır, müzik sevmem."},
+{en:"What is your favorite fruit?", tr:"En sevdiğin meyve nedir?"},
+{en:"I like apples and bananas.", tr:"Elma ve muz severim."},
+{en:"Do you like to dance?", tr:"Dans etmeyi sever misin?"},
+{en:"Yes, I like dancing.", tr:"Evet, dans etmeyi severim."},
+{en:"No, I don't like dancing.", tr:"Hayır, dans etmeyi sevmem."},
+{en:"What is your favorite drink?", tr:"En sevdiğin içecek nedir?"},
+{en:"I like orange juice.", tr:"Portakal suyunu severim."},
+{en:"Do you like to read?", tr:"Kitap okumayı sever misin?"},
+{en:"Yes, I read every day.", tr:"Evet, her gün okurum."},
+{en:"No, I don't like reading.", tr:"Hayır, okumayı sevmem."},
+{en:"What is your favorite place?", tr:"En sevdiğin yer neresi?"},
+{en:"I like the beach.", tr:"Plajı severim."},
+{en:"Do you like to watch movies?", tr:"Film izlemeyi sever misin?"},
+{en:"Yes, I watch movies on weekends.", tr:"Evet, hafta sonları film izlerim."},
+{en:"No, I don't watch movies.", tr:"Hayır, film izlemem."},
+{en:"What is your favorite sport?", tr:"En sevdiğin spor nedir?"},
+{en:"I like basketball.", tr:"Basketbolu severim."},
+{en:"Do you like to play video games?", tr:"Video oyunları oynamayı sever misin?"},
+{en:"Yes, I play video games.", tr:"Evet, video oyunları oynarım."},
+{en:"No, I don't play video games.", tr:"Hayır, video oyunu oynamam."},
+{en:"What do you do in your free time?", tr:"Boş zamanlarında ne yaparsın?"},
+{en:"I like to relax.", tr:"Dinlenmeyi severim."},
+{en:"Do you like to go shopping?", tr:"Alışverişe gitmeyi sever misin?"},
+{en:"Yes, I like shopping.", tr:"Evet, alışverişi severim."},
+{en:"No, I don't like shopping.", tr:"Hayır, alışverişi sevmem."},
+{en:"Have a great day!", tr:"Harika bir gün geçir!"}
+];
+const verbs = [
+  {en:"be",tr:"olmak"},
+  {en:"have",tr:"sahip olmak"},
+  {en:"do",tr:"yapmak"},
+  {en:"say",tr:"söylemek"},
+  {en:"go",tr:"gitmek"},
+  {en:"get",tr:"almak, elde etmek"},
+  {en:"make",tr:"yapmak"},
+  {en:"know",tr:"bilmek"},
+  {en:"think",tr:"düşünmek"},
+  {en:"take",tr:"almak"},
+  {en:"see",tr:"görmek"},
+  {en:"come",tr:"gelmek"},
+  {en:"want",tr:"istemek"},
+  {en:"look",tr:"bakmak"},
+  {en:"use",tr:"kullanmak"},
+  {en:"find",tr:"bulmak"},
+  {en:"give",tr:"vermek"},
+  {en:"tell",tr:"anlatmak, söylemek"},
+  {en:"work",tr:"çalışmak"},
+  {en:"call",tr:"aramak, çağırmak"},
+  {en:"try",tr:"denemek"},
+  {en:"ask",tr:"sormak"},
+  {en:"need",tr:"ihtiyaç duymak"},
+  {en:"feel",tr:"hissetmek"},
+  {en:"become",tr:"olmak, haline gelmek"},
+  {en:"leave",tr:"ayrılmak, bırakmak"},
+  {en:"put",tr:"koymak"},
+  {en:"mean",tr:"anlamına gelmek"},
+  {en:"keep",tr:"tutmak"},
+  {en:"let",tr:"izin vermek"},
+  {en:"begin",tr:"başlamak"},
+  {en:"help",tr:"yardım etmek"},
+  {en:"talk",tr:"konuşmak"},
+  {en:"turn",tr:"dönmek"},
+  {en:"start",tr:"başlamak"},
+  {en:"show",tr:"göstermek"},
+  {en:"hear",tr:"duymak"},
+  {en:"play",tr:"oynamak"},
+  {en:"run",tr:"koşmak"},
+  {en:"move",tr:"hareket etmek"},
+  {en:"like",tr:"sevmek"},
+  {en:"live",tr:"yaşamak"},
+  {en:"believe",tr:"inanmak"},
+  {en:"hold",tr:"tutmak"},
+  {en:"bring",tr:"getirmek"},
+  {en:"write",tr:"yazmak"},
+  {en:"sit",tr:"oturmak"},
+  {en:"stand",tr:"ayakta durmak"},
+  {en:"lose",tr:"kaybetmek"},
+  {en:"pay",tr:"ödemek"},
+  {en:"open",tr:"açmak"},
+  {en:"close",tr:"kapatmak"},
+  {en:"eat",tr:"yemek"},
+  {en:"drink",tr:"içmek"},
+  {en:"sleep",tr:"uyumak"},
+  {en:"read",tr:"okumak"},
+  {en:"listen",tr:"dinlemek"},
+  {en:"speak",tr:"konuşmak"},
+  {en:"watch",tr:"izlemek"},
+  {en:"buy",tr:"satın almak"},
+  {en:"sell",tr:"satmak"},
+  {en:"cook",tr:"pişirmek"},
+  {en:"clean",tr:"temizlemek"},
+  {en:"drive",tr:"sürmek"},
+  {en:"walk",tr:"yürümek"},
+  {en:"jump",tr:"zıplamak"},
+  {en:"swim",tr:"yüzmek"},
+  {en:"fly",tr:"uçmak"},
+  {en:"sing",tr:"şarkı söylemek"},
+  {en:"dance",tr:"dans etmek"},
+  {en:"wait",tr:"beklemek"},
+  {en:"answer",tr:"cevaplamak"},
+  {en:"stop",tr:"durmak"},
+  {en:"finish",tr:"bitirmek"},
+  {en:"study",tr:"çalışmak, öğrenmek"},
+  {en:"travel",tr:"seyahat etmek"},
+  {en:"love",tr:"sevmek"},
+  {en:"hate",tr:"nefret etmek"},
+  {en:"smile",tr:"gülümsemek"},
+  {en:"cry",tr:"ağlamak"},
+  {en:"laugh",tr:"gülmek"},
+  {en:"meet",tr:"buluşmak"},
+  {en:"remember",tr:"hatırlamak"},
+  {en:"forget",tr:"unutmak"},
+  {en:"choose",tr:"seçmek"},
+  {en:"explain",tr:"açıklamak"},
+  {en:"understand",tr:"anlamak"},
+  {en:"change",tr:"değiştirmek"},
+  {en:"agree",tr:"katılmak"},
+  {en:"arrive",tr:"varmak"},
+  {en:"break",tr:"kırmak"},
+  {en:"build",tr:"inşa etmek"},
+  {en:"can",tr:"-ebilmek"},
+  {en:"carry",tr:"taşımak"},
+  {en:"catch",tr:"yakalamak"},
+  {en:"copy",tr:"kopyalamak"},
+  {en:"cut",tr:"kesmek"},
+  {en:"decide",tr:"karar vermek"},
+  {en:"draw",tr:"çizmek"},
+  {en:"fall",tr:"düşmek"},
+  {en:"grow",tr:"büyümek"},
+  {en:"happen",tr:"olmak"},
+  {en:"hope",tr:"ummak"},
+  {en:"learn",tr:"öğrenmek"},
+  {en:"accept",tr:"kabul etmek"},
+  {en:"add",tr:"eklemek"},
+  {en:"allow",tr:"izin vermek"},
+  {en:"borrow",tr:"ödünç almak"},
+  {en:"admire",tr:"hayran olmak"},
+  {en:"bake",tr:"fırında pişirmek"},
+  {en:"behave",tr:"davranmak"},
+  {en:"boil",tr:"kaynatmak"},
+  {en:"brush",tr:"fırçalamak"},
+  {en:"burn",tr:"yanmak"},
+  {en:"climb",tr:"tırmanmak"},
+  {en:"collect",tr:"toplamak"},
+  {en:"complain",tr:"şikayet etmek"},
+  {en:"count",tr:"saymak"},
+  {en:"deliver",tr:"teslim etmek"},
+  {en:"describe",tr:"tanımlamak"},
+  {en:"die",tr:"ölmek"},
+  {en:"discover",tr:"keşfetmek"},
+  {en:"divide",tr:"bölmek"},
+  {en:"dream",tr:"rüya görmek"},
+  {en:"dress",tr:"giyinmek"},
+  {en:"drop",tr:"düşürmek"},
+  {en:"dry",tr:"kurutmak"},
+  {en:"enjoy",tr:"zevk almak"},
+  {en:"feed",tr:"beslemek"},
+  {en:"fill",tr:"doldurmak"},
+  {en:"fix",tr:"tamir etmek"},
+  {en:"follow",tr:"takip etmek"},
+  {en:"fry",tr:"kızartmak"},
+  {en:"guess",tr:"tahmin etmek"},
+  {en:"hide",tr:"saklanmak"},
+  {en:"invite",tr:"davet etmek"},
+  {en:"join",tr:"katılmak"},
+  {en:"kick",tr:"tekmelemek"},
+  {en:"kill",tr:"öldürmek"},
+  {en:"knock",tr:"vurmak, kapıyı çalmak"},
+  {en:"lie",tr:"yatmak, uzanmak"},
+  {en:"lift",tr:"kaldırmak"},
+  {en:"light",tr:"yakmak"},
+  {en:"lock",tr:"kilitlemek"},
+  {en:"marry",tr:"evlenmek"},
+  {en:"miss",tr:"özlemek, kaçırmak"},
+  {en:"mix",tr:"karıştırmak"},
+  {en:"notice",tr:"fark etmek"},
+  {en:"offer",tr:"teklif etmek"},
+  {en:"order",tr:"sipariş vermek, emretmek"},
+  {en:"pack",tr:"paketlemek"},
+  {en:"pass",tr:"geçmek, geçirmek"},
+  {en:"pick",tr:"toplamak, seçmek"},
+  {en:"plant",tr:"dikmek"},
+  {en:"pour",tr:"dökmek"},
+  {en:"practice",tr:"pratik yapmak"},
+  {en:"pray",tr:"dua etmek"},
+  {en:"prepare",tr:"hazırlamak"},
+  {en:"press",tr:"basmak"},
+  {en:"promise",tr:"söz vermek"},
+  {en:"pull",tr:"çekmek"},
+  {en:"push",tr:"itmek"},
+  {en:"rain",tr:"yağmur yağmak"},
+  {en:"reach",tr:"ulaşmak"},
+  {en:"realize",tr:"farkına varmak"},
+  {en:"receive",tr:"almak (teslim)"},
+  {en:"refuse",tr:"reddetmek"},
+  {en:"relax",tr:"rahatlamak"},
+  {en:"rent",tr:"kiralamak"},
+  {en:"rescue",tr:"kurtarmak"},
+  {en:"return",tr:"geri dönmek, iade etmek"},
+  {en:"ride",tr:"binmek (taşıt)"},
+  {en:"ring",tr:"çalmak (zil)"},
+  {en:"save",tr:"kurtarmak, biriktirmek"},
+  {en:"search",tr:"aramak"},
+  {en:"seem",tr:"görünmek"},
+  {en:"send",tr:"göndermek"},
+  {en:"serve",tr:"servis etmek"},
+  {en:"shake",tr:"sallamak"},
+  {en:"shoot",tr:"ateş etmek"}
+];
+const adjectives = [
+  {en:"time",tr:"zaman"},
+  {en:"person",tr:"kişi"},
+  {en:"year",tr:"yıl"},
+  {en:"way",tr:"yol, yöntem"},
+  {en:"day",tr:"gün"},
+  {en:"thing",tr:"şey"},
+  {en:"man",tr:"adam"},
+  {en:"world",tr:"dünya"},
+  {en:"life",tr:"hayat"},
+  {en:"hand",tr:"el"},
+  {en:"part",tr:"parça, bölüm"},
+  {en:"child",tr:"çocuk"},
+  {en:"eye",tr:"göz"},
+  {en:"woman",tr:"kadın"},
+  {en:"place",tr:"yer"},
+  {en:"work",tr:"iş"},
+  {en:"week",tr:"hafta"},
+  {en:"case",tr:"durum, vaka"},
+  {en:"point",tr:"nokta, fikir"},
+  {en:"government",tr:"hükümet"},
+  {en:"company",tr:"şirket"},
+  {en:"number",tr:"sayı"},
+  {en:"group",tr:"grup"},
+  {en:"problem",tr:"problem, sorun"},
+  {en:"fact",tr:"gerçek"},
+  {en:"good",tr:"iyi"},
+  {en:"new",tr:"yeni"},
+  {en:"first",tr:"ilk"},
+  {en:"last",tr:"son"},
+  {en:"long",tr:"uzun"},
+  {en:"great",tr:"harika, büyük"},
+  {en:"little",tr:"küçük, az"},
+  {en:"own",tr:"kendi"},
+  {en:"other",tr:"diğer"},
+  {en:"old",tr:"eski, yaşlı"},
+  {en:"right",tr:"doğru, sağ"},
+  {en:"big",tr:"büyük"},
+  {en:"high",tr:"yüksek"},
+  {en:"different",tr:"farklı"},
+  {en:"small",tr:"küçük"},
+  {en:"large",tr:"geniş, büyük"},
+  {en:"next",tr:"sonraki"},
+  {en:"early",tr:"erken"},
+  {en:"young",tr:"genç"},
+  {en:"important",tr:"önemli"},
+  {en:"few",tr:"birkaç"},
+  {en:"public",tr:"halka açık"},
+  {en:"bad",tr:"kötü"},
+  {en:"same",tr:"aynı"},
+  {en:"able",tr:"yapabilen"},
+  {en:"house",tr:"ev"},
+  {en:"car",tr:"araba"},
+  {en:"school",tr:"okul"},
+  {en:"friend",tr:"arkadaş"},
+  {en:"family",tr:"aile"},
+  {en:"food",tr:"yiyecek"},
+  {en:"water",tr:"su"},
+  {en:"city",tr:"şehir"},
+  {en:"country",tr:"ülke"},
+  {en:"street",tr:"sokak"},
+  {en:"door",tr:"kapı"},
+  {en:"window",tr:"pencere"},
+  {en:"chair",tr:"sandalye"},
+  {en:"table",tr:"masa"},
+  {en:"bed",tr:"yatak"},
+  {en:"book",tr:"kitap"},
+  {en:"pen",tr:"kalem"},
+  {en:"phone",tr:"telefon"},
+  {en:"bag",tr:"çanta"},
+  {en:"shirt",tr:"gömlek"},
+  {en:"shoes",tr:"ayakkabılar"},
+  {en:"hat",tr:"şapka"},
+  {en:"sun",tr:"güneş"},
+  {en:"moon",tr:"ay"},
+  {en:"star",tr:"yıldız"},
+  {en:"rain",tr:"yağmur"},
+  {en:"snow",tr:"kar"},
+  {en:"wind",tr:"rüzgar"},
+  {en:"hot",tr:"sıcak"},
+  {en:"cold",tr:"soğuk"},
+  {en:"happy",tr:"mutlu"},
+  {en:"sad",tr:"üzgün"},
+  {en:"fast",tr:"hızlı"},
+  {en:"slow",tr:"yavaş"},
+  {en:"easy",tr:"kolay"},
+  {en:"difficult",tr:"zor"},
+  {en:"near",tr:"yakın"},
+  {en:"far",tr:"uzak"},
+  {en:"late",tr:"geç"},
+  {en:"dirty",tr:"kirli"},
+  {en:"beautiful",tr:"güzel"},
+  {en:"ugly",tr:"çirkin"},
+  {en:"air",tr:"hava"},
+  {en:"animal",tr:"hayvan"},
+  {en:"apple",tr:"elma"},
+  {en:"baby",tr:"bebek"},
+  {en:"back",tr:"sırt, geri"},
+  {en:"ball",tr:"top"},
+  {en:"bird",tr:"kuş"},
+  {en:"boy",tr:"erkek çocuk"},
+  {en:"bread",tr:"ekmek"},
+  {en:"brother",tr:"erkek kardeş"},
+  {en:"cat",tr:"kedi"},
+  {en:"face",tr:"yüz"},
+  {en:"father",tr:"baba"},
+  {en:"girl",tr:"kız çocuk"},
+  {en:"head",tr:"baş"},
+  {en:"home",tr:"ev"},
+  {en:"job",tr:"iş"},
+  {en:"leg",tr:"bacak"},
+  {en:"letter",tr:"mektup, harf"},
+  {en:"mother",tr:"anne"},
+  {en:"name",tr:"isim"},
+  {en:"night",tr:"gece"},
+  {en:"nose",tr:"burun"},
+  {en:"park",tr:"park"},
+  {en:"sister",tr:"kız kardeş"},
+  {en:"son",tr:"oğul"},
+  {en:"accident",tr:"kaza"},
+  {en:"advice",tr:"tavsiye"},
+  {en:"afternoon",tr:"öğleden sonra"},
+  {en:"airport",tr:"havaalanı"},
+  {en:"apartment",tr:"daire"},
+  {en:"arm",tr:"kol"},
+  {en:"bank",tr:"banka"},
+  {en:"beach",tr:"plaj"},
+  {en:"bell",tr:"zil"},
+  {en:"bicycle",tr:"bisiklet"},
+  {en:"boat",tr:"tekne"},
+  {en:"body",tr:"vücut"},
+  {en:"box",tr:"kutu"},
+  {en:"bus",tr:"otobüs"},
+  {en:"cake",tr:"kek"},
+  {en:"camera",tr:"kamera"},
+  {en:"cheese",tr:"peynir"},
+  {en:"church",tr:"kilise"},
+  {en:"class",tr:"sınıf"},
+  {en:"clock",tr:"saat"},
+  {en:"cloud",tr:"bulut"},
+  {en:"coat",tr:"kaban"},
+  {en:"coffee",tr:"kahve"},
+  {en:"computer",tr:"bilgisayar"},
+  {en:"cup",tr:"fincan"},
+  {en:"desk",tr:"çalışma masası"},
+  {en:"dress",tr:"elbise"},
+  {en:"drink",tr:"içecek"},
+  {en:"ear",tr:"kulak"},
+  {en:"egg",tr:"yumurta"},
+  {en:"flower",tr:"çiçek"},
+  {en:"fruit",tr:"meyve"},
+  {en:"garden",tr:"bahçe"},
+  {en:"glass",tr:"bardak, cam"},
+  {en:"grass",tr:"çim"},
+  {en:"hair",tr:"saç"},
+  {en:"heart",tr:"kalp"},
+  {en:"hill",tr:"tepe"},
+  {en:"holiday",tr:"tatil"},
+  {en:"hospital",tr:"hastane"},
+  {en:"hotel",tr:"otel"},
+  {en:"hour",tr:"saat"},
+  {en:"ice",tr:"buz"},
+  {en:"idea",tr:"fikir"},
+  {en:"island",tr:"ada"},
+  {en:"key",tr:"anahtar"},
+  {en:"kitchen",tr:"mutfak"},
+  {en:"lake",tr:"göl"},
+  {en:"language",tr:"dil"},
+  {en:"light",tr:"ışık"},
+  {en:"list",tr:"liste"},
+  {en:"machine",tr:"makine"},
+  {en:"map",tr:"harita"},
+  {en:"market",tr:"pazar, market"},
+  {en:"milk",tr:"süt"},
+  {en:"minute",tr:"dakika"},
+  {en:"money",tr:"para"},
+  {en:"month",tr:"ay"},
+  {en:"morning",tr:"sabah"},
+  {en:"mountain",tr:"dağ"},
+  {en:"mouth",tr:"ağız"},
+  {en:"movie",tr:"film"},
+  {en:"music",tr:"müzik"},
+  {en:"newspaper",tr:"gazete"},
+  {en:"noise",tr:"gürültü"},
+  {en:"ocean",tr:"okyanus"},
+  {en:"office",tr:"ofis"},
+  {en:"orange",tr:"portakal"},
+  {en:"page",tr:"sayfa"},
+  {en:"paper",tr:"kağıt"},
+  {en:"parent",tr:"ebeveyn"},
+  {en:"party",tr:"parti"}
+];
+let sets=[], currentSetIndex=0, setQuestions=[], current=0;
+let score=0, wrongAnswers=[];
+let activeCategory="";
+
+function shuffle(arr){return arr.sort(()=>Math.random()-0.5);}
+
+function showInfo(type){
+  let tbody=document.getElementById("infoBody"); 
+  tbody.innerHTML="";
+  document.getElementById("infoTable").style.display="table";
+  document.getElementById("quizArea").style.display="none";
+  document.getElementById("result").style.display="none";
+
+  let dataset = (type==="sentences")?sentences:(type==="verbs")?verbs:adjectives;
+  dataset.forEach(item=>{
+    let tr=document.createElement("tr");
+    let tdEn=document.createElement("td");
+    tdEn.textContent=item.en;
+    tdEn.onclick=()=>speakText(item.en,'en-US');
+    let tdTr=document.createElement("td");
+    tdTr.textContent=item.tr;
+    tdTr.onclick=()=>speakText(item.tr,'tr-TR');
+    tr.appendChild(tdEn); tr.appendChild(tdTr);
+    tbody.appendChild(tr);
+  });
+}
+
+function speakText(text,lang){
+  if('speechSynthesis' in window){
+    window.speechSynthesis.cancel();
+    let utterance=new SpeechSynthesisUtterance(text);
+    utterance.lang=lang;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+function startAll(type){
+  activeCategory=type;
+  document.getElementById("infoTable").style.display="none";
+  let dataset=(type==="sentences")?sentences:(type==="verbs")?verbs:adjectives;
+  let shuffled=shuffle([...dataset]);
+  sets=[];
+  for(let i=0;i<shuffled.length;i+=15){sets.push(shuffled.slice(i,i+15));}
+  currentSetIndex=0;
+  startSet();
+}
+
+function startSet(){
+  setQuestions=sets[currentSetIndex];
+  current=0; score=0; wrongAnswers=[];
+  document.getElementById("quizArea").style.display="block";
+  document.getElementById("result").style.display="none";
+  document.getElementById("nextSetBtn").style.display="none";
+  document.getElementById("checkWrongBtn").style.display="none";
+  loadQuestion();
+}
+
+function loadQuestion(){
+  if(current>=setQuestions.length){endSet(); return;}
+  let q=setQuestions[current];
+  document.getElementById("question").textContent=`Translate: ${q.en}`;
+  document.getElementById("progress").textContent=`Soru ${current+1} / ${setQuestions.length}`;
+  document.getElementById("scoreTrack").textContent=`Doğru: ${score} / Yanlış: ${wrongAnswers.length}`;
+  let optionsDiv=document.getElementById("options"); optionsDiv.innerHTML="";
+
+  let dataset=(activeCategory==="sentences")?sentences:(activeCategory==="verbs")?verbs:adjectives;
+  let answers=[q.tr];
+  while(answers.length<3){
+    let r=dataset[Math.floor(Math.random()*dataset.length)].tr;
+    if(!answers.includes(r)) answers.push(r);
+  }
+  answers=shuffle(answers);
+  let letters=["A","B","C"];
+  answers.forEach((ans,idx)=>{
+    let btn=document.createElement("button");
+    btn.className="option"; 
+    btn.textContent=`${letters[idx]}) ${ans}`;
+    btn.dataset.value=ans;
+    btn.onclick=()=>checkAnswer(btn,q.tr);
+    optionsDiv.appendChild(btn);
+  });
+}
+
+function checkAnswer(btn,correct){
+  let opts=document.querySelectorAll(".option"); opts.forEach(b=>b.disabled=true);
+  if(btn.dataset.value===correct){
+    btn.classList.add("correct"); 
+    score++;
+    setTimeout(()=>{btn.classList.remove("correct");btn.classList.add("reveal");},1000);
+  } else {
+    btn.classList.add("wrong");
+    if(!wrongAnswers.includes(setQuestions[current])) wrongAnswers.push(setQuestions[current]);
+    opts.forEach(o=>{
+      if(o.dataset.value===correct){ setTimeout(()=>o.classList.add("reveal"),1000);}
+    });
+  }
+  setTimeout(()=>{current++; loadQuestion();},1500);
+}
+
+function endSet(){
+  document.getElementById("quizArea").style.display="none";
+  document.getElementById("result").style.display="block";
+  document.getElementById("setResult").textContent=`Set ${currentSetIndex+1} Bitti! Skor: ${score}/${setQuestions.length}`;
+  if(wrongAnswers.length){
+    document.getElementById("wrongList").textContent="Yanlışlar:\n"+wrongAnswers.map(x=>`• ${x.en} = ${x.tr}`).join("\n");
+    document.getElementById("checkWrongBtn").style.display="inline-block";
+  } else {
+    document.getElementById("wrongList").textContent="Tümünü doğru yaptınız 👏";
+  }
+  if(currentSetIndex<sets.length-1){
+    currentSetIndex++;
+    document.getElementById("nextSetBtn").style.display="inline-block";
+    document.getElementById("nextSetBtn").textContent=`▶️ Set ${currentSetIndex+1} Başla`;
+  }
+}
+
+function reviewWrongs(){
+  if(!wrongAnswers.length)return;
+  setQuestions=shuffle([...wrongAnswers]);
+  current=0;
+  document.getElementById("result").style.display="none";
+  document.getElementById("quizArea").style.display="block";
+  loadQuestion();
+}
+</script>
+</body>
+</html>

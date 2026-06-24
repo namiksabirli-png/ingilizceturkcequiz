@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>English → Turkish Quiz with Voice (A list)</title>
+  <style>
+    body{margin:0;font-family:system-ui,Arial;background:linear-gradient(135deg,#1e293b,#0f172a);min-height:100vh;color:#0f172a}
+    .container{max-width:940px;margin:0 auto;padding:24px}
+    .panel{background:#fff;border-radius:14px;padding:24px;box-shadow:0 12px 32px rgba(0,0,0,.25)}
+    h1{margin:0 0 8px;font-size:28px}
+    .sub{color:#64748b;margin-bottom:20px}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+    .btn{background:#2563eb;color:#fff;border:0;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:600}
+    .btn:hover{background:#1d4ed8}
+    .btn:active{transform:scale(.96)}
+    .audio-toggle{background:#f1f5f9;border:1px solid #e2e8f0;padding:6px 10px;border-radius:10px;cursor:pointer;font-weight:600}
+    .audio-toggle:active{transform:scale(.96)}
+    .stats{display:flex;gap:16px;font-weight:600;flex-wrap:wrap}
+    .stats span{color:#64748b;font-weight:500;margin-right:6px}
+    .progress{color:#64748b;margin:6px 0 16px}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    @media(min-width:680px){.grid{grid-template-columns:1fr 1fr}}
+    .card{border:1.5px solid #e2e8f0;border-radius:12px;background:#f8fafc;overflow:hidden;transition:border-color .3s}
+    .card.answered-correct{border-color:#16a34a}
+    .card.answered-wrong{border-color:#dc2626}
+    .english{padding:14px 16px;background:#e2e8f0;font-size:20px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .2s}
+    .english:hover{background:#d1d9e6}
+    .english .speak-icon{font-size:18px;opacity:.6}
+    .options{display:none;padding:12px 12px 2px}
+    .option{width:100%;text-align:left;margin:0 0 10px;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .15s;font-size:15px}
+    .option:hover{background:#f1f5f9;border-color:#94a3b8}
+    .option:active{transform:scale(.98)}
+    .option:disabled{opacity:.6;cursor:default;transform:none}
+    .option.correct-answer{background:#dcfce7;border-color:#16a34a}
+    .option.wrong-answer{background:#fee2e2;border-color:#dc2626}
+    .result{padding:10px 14px;font-weight:700;font-size:15px;min-height:48px}
+    .correct{color:#16a34a}
+    .incorrect{color:#dc2626}
+    .final{margin-top:16px;padding:16px;border-radius:12px;background:#e0f2fe;border:1.5px solid #bae6fd}
+    .final .score-big{font-size:32px;font-weight:900;color:#2563eb}
+    .final .detail{color:#475569;margin-top:4px}
+    .progress-bar{width:100%;height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin:6px 0 12px}
+    .progress-bar .fill{height:100%;background:linear-gradient(90deg,#2563eb,#4ade80);transition:width .3s;border-radius:4px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="panel">
+      <h1>📚 English → Turkish Quiz</h1>
+      <div class="sub">Click the English word. It will speak the correct pronunciation and show 3 Turkish options (1 correct, 2 distractors).</div>
+      <div class="controls">
+        <button class="btn" onclick="generateNewSet()">🎯 New Set (15)</button>
+        <button id="audioToggle" class="audio-toggle" onclick="toggleAudio()">🔊 Voice: On</button>
+        <div class="stats">
+          <div><span>✅ Correct</span><b id="stat-c">0</b></div>
+          <div><span>❌ Wrong</span><b id="stat-w">0</b></div>
+          <div><span>📊 Score</span><b id="stat-s">0%</b></div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress"><b id="stat-a">0</b> / 15 answered</div>
+      <div id="list" class="grid"></div>
+      <div id="final" class="final" style="display:none"></div>
+    </div>
+  </div>
+
+<script>
+const rawList=`
+After → Sonra
+Agreed → Anlaşıldı, Kararlaştırıldı
+Answer → Cevap
+Abandon → Terk Etmek, Bırakmak
+Ability → Hüner, Beceri, Kabiliyet
+About → Hakkında, Aşağı Yukarı, Üzere
+Above → Üstünde, Üzerine
+Abroad → Yurt Dışında, Yurtdışı
+Absence → Bulunmama, Yokluk
+Absolute → Mutlak, Salt, Kesin
+Absolutely → Mutlaka, Kesinlikle
+Abuse → Suistimal Etmek, Kötüye Kullanmak
+Accept → Kabul Etmek
+Access → Giriş, Erişim, Erişmek
+Accident → Kaza
+Accompany → Eşlik Etmek
+Accomplish → Başarıyla Tamamlamak, Sonuçlandırmak
+Account → Hesap
+Accurate → Kesin, Doğru
+Accuse → Suçlamak, İtham Etmek
+Achieve → Elde Etmek, Başarmak
+Achievement → Başarı
+Acknowledge → Kabul Etmek, Kabullenmek
+Acquire → Edinmek, Elde Etmek
+Across → Karşıya, Karşı karşıya
+Act → Davranmak, Hareket Etmek, Eylem
+Action → Aksiyon, Eylem
+Active → Etkin, Aktif
+Activity → Faaliyet, Etkinlik, Aktivite
+Actual → Gerçek
+Actually → Aslında
+Adapt → Uymak, Uyarlamak, Adapte Olmak
+Add → Eklemek, İlave Etmek
+Addition → İlave, Ek
+Adequate → Yeterli, Münasip
+Adjust → Ayarlamak
+Adjustment → Ayarlama, Ayar
+Administration → İdare, Yönetim
+Administrator → İdareci, Yönetici
+Admire → Hayran Olmak, Beğenmek
+Admiration → Hayranlık
+Admission → Kabul, İtiraf
+Admit → Kabul Etmek, İtiraf Etmek
+Adolescent → Ergen
+Adopt → Evlat Edinmek, Benimsemek
+Adult → Yetişkin
+Advance → İlerlemek, Avans, Geliştirmek
+Advanced → İleri, Gelişkin
+Advantage → Avantaj, Fayda
+Adventure → Macera, Serüven
+Advertising → Reklamcılık, Reklam
+Advice → Tavsiye, Nasihat
+Advise (v) → Nasihat Etmek, Öğütlemek
+Adviser → Müşavir, Danışman
+Advocate (v) → Müdafaa Etmek, Savunmak
+Affect → Etkilemek
+Afford → Parası Yetmek
+Afraid → Korkmuş, Ürkmüş
+Afternoon → Öğleden Sonra
+Again → Tekrar, Yeniden
+Against → Karşı, Aykırı
+Age → Yaş, Çağ
+Agency → Ajans, Acente
+Agenda → Gündem, Ajanda
+Agent → Ajan, Temsilci
+Aggressive → Kavgacı, Agresif
+Ago → Evvel, Önce
+Agree → Aynı Fikirde Olmak, Anlaşmak, Katılmak
+Agreement → Anlaşma, Mutabakat
+Agriculture → Tarım, Ziraat
+Ahead → İleride, İleri
+Aid → Yardım Etmek, Yardım
+Aim → Amaçlamak, Amaç, Hedef
+Aircraft → Uçak, Hava Taşıtı
+Airline → Havayolu
+Airport → Havalimanı
+Alcohol → Alkol
+Alive → Canlı
+All → Tüm, Hepsi
+Alliance → Antlaşma, İttifak
+Allow → İzin Vermek
+Ally → Müttefik
+Almost → Hemen Hemen, Neredeyse
+Alone → Yalnız
+Along → Boyunca
+Already → Zaten, Halihazırda
+Also → Ayrıca
+Alternative → Alternatif
+Although → Rağmen
+Always → Her Zaman, Daima
+Amazing → Şaşırtıcı
+Among → Arasında, Arasına
+Amount → Meblağ, Tutar
+Analysis → Analiz, Tahlil
+Analyze → Analiz Etmek, İncelemek
+Ancient → Antik
+And → Ve
+Anger → Öfke, Hiddet
+Angle → Açı
+Angry → Kızgın, Sinirli
+Animal → Hayvan
+Anniversary → Yıldönümü
+Announce → Duyurmak, Anons Etmek
+Annual → Senelik, Yıllık
+Another → Öbür, Başka
+Anticipate → Beklemek, Ummak
+Anxiety → Endişe, Kaygı
+Anybody → Kimse, Hiç Kimse
+Anymore → Artık
+Anyone → Hiç Kimse, Kimse
+Anyway → Neyse, Her Neyse
+Anywhere → Her Yer, Herhangi Bir Yer
+Apart → Ayrı
+Apartment → Daire
+Apparent → Görünür, Aşikar
+Apparently → Belli ki, Anlaşılan, Görünüşte
+Appeal → Başvurmak, Temyiz, Cazibe
+Appear → Belli Olmak, Görünmek
+Appearance → Görünüş
+Apple → Elma
+Application → Başvuru, Uygulama
+Apply → Başvurmak, Uygulamak
+Appoint → Atamak
+Appointment → Randevu, Atama, Tayin
+Appreciate → Değerini Artırmak, Beğenmek
+Approach → Yanaşmak, Yaklaşım
+Appropriate → Münasip, Uygun
+Approval → Tasvip, Onay
+Approve → Kabul Etmek, Beğenmek, Onaylamak
+Approximately → Takriben, Aşağı Yukarı
+Architect → Mimar
+Area → Alan, Bölge
+Argue → Tartışmak
+Argument → Argüman, Sav
+Arm → Kol
+Armed → Ateşli, Silahlı
+Army → Ordu
+Around → Sularında, Etrafında, Çevresinde
+Arrange → Ayarlamak, Düzenlemek
+Arrangement → Düzenleme, Ayarlama
+Arrest → Tutuklamak
+Arrival → Gelmek, Geliş, Varış
+Arrive → Varmak, Ulaşmak
+Article → Makale
+Aside → Bertaraf, Ayrı
+Ask → Sormak, İstemek
+Asleep → Uyuyan, Uyuşuk
+Aspect → Hal, Görünüş, Yön
+Assault → Saldırmak, Saldırı
+Assert → İleri Sürmek, İddia Etmek
+Assess → Değer Biçmek
+Assessment → Değerlendirme
+Asset → Varlık
+Assign → Atamak, Tahsis Etmek
+Assignment → Atama, Görevlendirme
+Assist → Yardım Etmek
+Assistance → Yardım
+Assistant → Yardımcı, Asistan
+Associate → Birleştirmek, İlişkilendirmek
+Association → Birlik, Dernek
+Assume → Farzetmek, Varsaymak
+Assumption → Farzetme, Varsayım
+Assure → Garanti Etmek
+Atmosphere → Atmosfer
+Attach → Eklemek, İliştirmek
+Attack → Saldırmak, Saldırı
+Attempt → Girişimde Bulunmak
+Attend → Katılmak
+Attention → İlgi, Özen, Dikkat
+Attitude → Tavır, Tutum
+Attorney → Avukat
+Attract → Cezbetmek
+Attractive → Çekici, Cazibeli
+Attribute → Bağlamak, Atfetmek, Dayandırmak
+Audience → Kitle, İzleyici, Seyirci
+Author → Yazar
+Authority → Otorite, Yetki
+Available → Müsait, Mevcut, Uygun
+Average → Ortalama
+Avoid → Kaçınmak, Önlemek
+Award → Ödül
+Aware → Farkında, Haberdar
+Awareness → Farkındalık, Farkında Olma
+Away → Uzak, Uzakta
+Awful → Berbat
+Baby → Bebek
+Back → Arka
+Backpack → Sırt Çantası
+Bad → Kötü
+Badly → Kötü Bir Şekilde
+Bag → Çanta
+Bake → Pişirmek
+Balance → Denge
+Bald → Kel
+Ball → Top
+Band → Müzik Grubu
+Bank → Banka
+Barely → Zar Zor
+Basic → Esas, Temel
+Basically → Temelde, Esasen, Aslında
+Basket → Sepet
+Bathroom → Banyo
+Battery → Pil
+Battle → Savaş
+Beach → Plaj, Sahil, Kumsal
+Bean → Fasulye
+Bear → Ayı
+Beautiful → Güzel
+Beauty → Güzellik
+Because → Çünkü
+Become → Olmak, Haline Gelmek
+Bed → Yatak
+Bedroom → Yatak Odası
+Beer → Bira
+Before → Önce
+Begin → Başlamak
+Beginning → Başlangıç
+Behavior → Davranış, Tavır, Hal
+Behind → Arkada, Arkasında
+Belief → İnanç
+Believe → İnanmak
+Belong → Ait Olmak
+Below → Aşağısında
+Belt → Kemer
+Benefit → Fayda
+Best → En İyi
+Bet → İddaa, İddiaya Girmek
+Better → Daha İyi
+Between → Arasında
+Big → Büyük
+Bill → Fatura, Senet
+Bird → Kuş
+Birth → Doğum
+Birthday → Doğum Günü
+Bite → Isırmak, Lokma
+Blame → Ayıplamak, Suçlamak
+Blanket → Battaniye
+Blind → Kör
+Blood → Kan
+Blue → Mavi
+Body → Vücut
+Book → Kitap
+Border → Sınır, Hudut, Kenar
+Borrow → Ödünç Almak
+Boss → Patron
+Bottle → Şişe
+Bowl → Kase, Tas
+Box → Kutu
+Boyfriend → Erkek Arkadaş, Sevgili
+Brain → Beyin
+Brand → Marka
+Bread → Ekmek
+Break → Kırmak
+Breakfast → Kahvaltı
+Breast → Göğüs
+Breathe → Nefes Almak
+Bridge → Köprü
+Bright → Parlak
+Broken → Bozuk, Kırık
+Brother → Erkek Kardeş
+Brown → Kahverengi
+Brush → Fırça, Fırçalamak
+Budget → Bütçe
+Build → İnşa Etmek
+Building → Bina
+Bullet → Mermi
+Burn → Yakmak, Yanmak
+Bus → Otobüs
+Business → İş
+Busy → Meşgul
+Button → Düğme, Buton
+Buy → Satın Almak
+Buyer → Alıcı
+Cabbage → Lahana
+Cage → Kafes
+Call off → İptal etmek
+Captive → Esir
+Captor → Esir alan
+Carpet → Halı
+Car → Araba
+Cat → Kedi
+Castle → Kale
+Cave → Mağara
+Census → Nüfus Sayımı
+Charm → Alımlı, Sevimli
+Chair → Sandalye
+Chin → Çene
+Child → Çocuk
+Clash → Anlaşmazlık
+Clay → Kil, çamur
+Clerk → Yazıcı, katip
+Cliff → Uçurum
+Cling → Yapışmak, Sarılmak
+Cloud → Bulut
+Cloudy → Bulutlu
+Clue → İpucu
+Cold → Nezle
+Collide → Çarpışmak
+Combat → Dövüş
+Comment → Yorum
+Commitment → Vaat, Taahhüt, Bağlılık
+Compatible → Uygun, Münasip
+Compliant → İtaatkar
+Conflict → Çatışma, Kavga, Zıtlık
+Cool → Serin, Havalı
+Cow → İnek
+Count (v) → Saymak
+Crow → Karga
+Create → Yaratmak
+Creative → Yaratıcı
+Creation → Yaratık
+Cute → Sevimli
+Daring → Cesur
+Dawn → Şafak, Tan
+Deaf → Sağır
+Dear → Sevgili, Değerli
+Decay → Çürümek, Bozulmak
+Decline → Reddetmek, Geri Çevirmek
+Defect → Defo, Özür
+Deletion → Silmek
+Delightful → Hoş, Güzel
+Delusion → Aldatma
+Demolition → Yıkma, Tahrip
+Dent → Çöküntü, Göçük
+Dependable → Güvenilir, Emin
+Deportation → Sürgün
+Deprive → Yoksun Bırakmak
+Desperately → Umutsuzca
+Destiny → Kader
+Dilemma → İkilem
+Dinner → Akşam Yemeği
+Disgrace → Utanç, Ayıp
+Disrupt → Bozmak
+Divorce → Boşanma
+Dizziness → Baş Dönmesi
+Doctor → Doktor, Hekim
+Dog → Köpek
+Drawing → Çizim
+Dream → Hayal
+Edit → Düzenlemek
+Economy → Ekonomi
+Enormous → Muazzam, Kocaman
+Ear → Kulak
+Earth → Toprak, Dünya
+Earing → Küpe
+Earn → Para Kazanmak
+Except → Haricinde
+Expect → Ümit etmek
+Exile → Sürgün
+Exit → Çıkış, Çıkmak
+Eastern → Doğuya ait, Doğu
+Effective → Etkili
+Efficient → Verimli
+Emergency → Acil
+Elephant → Fil
+Emotion → Duygu
+Entertain → Eğlendirmek
+Equal → Eşit, Denk
+Essay → Rapor, Makale
+Eye → Göz
+Eyelash → Kirpik
+Favorable → Olumlu
+Fish → Balık
+Fire → Ateş
+Frosh → Kurba
+Fall → Düşmek
+Feasible → Mümkün, Yapılabilir
+Fabric → Kumaş
+Fugitive → Kaçak
+Facilitate → Kolaylaştırmak
+Fade → Rengi Solmak, Silinmek
+Fun → Eğlence
+Fur → Kürk
+Fulfill → Tatmin etmek
+Fence → Çit, Parmaklık
+Fertile → Bereketli
+Fever → Ateş
+Faint → Bayılmak
+Flu → Grip
+Fierce → Şiddetli, Hiddetli
+Finger → Parmak
+Flimsy → Dayanıksız, Çürük
+Flee → Kaçmak, Kaçırmak
+Flavor → Tat, Lezzet
+Flat → Daire
+Flaw → Kusur
+Flawless → Kusursuz
+Fortunate → Minnettar, Müteşekkir
+Gain → Kazanmak
+Gap → Boşluk, Fark
+Generous → Cömert
+Genius → Deha, Dahi
+Genuine → Hakiki, Gerçek
+Get → Elde Etmek, Almak
+Guest → Misafir, Konuk
+Guard → Korumak
+Grow → Büyümek
+Groom → Damat
+Grocery Store → Market
+Gravity → Yer çekimi
+Grateful → Minnettar
+Grass → Çimen, Ot
+Glove → Eldiven
+Glory → Görkem, Şan
+Globe → Küre, Dünya
+Glow → Parıltı
+Glad → Memnun
+God → Tanrı
+Good → İyi
+Give → Vermek
+Gift → Armağan, Yetenek
+Ghost → Hayalet
+Hair → Saç
+Honey → Bal
+Honor → Onur
+Half → Yarım
+High → Yüksek, Zirve
+Hammer → Çekiç
+Hand → El
+Handy → Kullanışlı
+Handsome → Yakışıklı
+Hang → Asmak
+Happy → Mutlu
+Harbor → Liman
+Hat → Şapka
+Hate → Nefret
+Hear → Duymak
+Head → Baş
+Headache → Baş ağrısı
+Heat → Isı, Sıcaklık
+Hello → Merhaba
+Help → Yardım Etmek
+Herb → Bitki, Ot
+Here → Burada
+Howl → Uluma
+Hawk → Şahin
+Health → Sağlık
+Hit → Vurmak
+Hill → Tepe
+Have → Sahip Olmak
+Information → Bilgi
+Inform → Bilgilendirmek
+Injured → Yaralı
+Image → Görüntü, İmge
+Impossible → İmkansız
+Insane → Deli, Kaçık
+Incorrect → YANLIŞ
+Invade → İstila Etmek
+Introduction → Giriş
+Iron → Demir
+Invent → İcat Etmek
+Invisible → Görünmez
+Inhale → Nefes Almak, İçine Çekmek
+Inheritance → Miras
+Innovation → Yenilik
+Inquisitive → Meraklı
+Insect → Böcek
+Impulse → Dürtü, Güdü
+Inception → Başlangıç
+Invade → İstila etmek
+Invention → İcat
+Invasion → Akın, Saldırı, İstila
+Invincible → Yenilmez
+Involved → Karmaşık
+Ironic → Alaylı, Alaycı
+Intelligent → Zeki
+Jacket → Ceket
+Jacuzzi → Jakuzi
+Jam → Reçel
+Jar → Kavanoz
+Jeans → Kot
+Jeep → Jip
+Jet → Jet
+Jet engine → Jet Motoru
+Jewelry → Takı
+Jogging → Koşmak
+Jukebox → Müzik Kutusu
+Junk → Ivır Zıvır
+Keep → Korumak, Tutmak, Devam Etmek
+Key → Anahtar
+Kick → Tekme, Tekmelemek
+Kid → Çocuk, Ufaklık, Dalga Geçmek
+Kill → Öldürmek
+Kind → İyi, Nazik, Çeşit
+King → Kral
+Kingdom → Krallık
+Kiss → Öpücük, Öpmek
+Kitchen → Mutfak
+Knee → Diz, Diz Çökmek
+Knife → Bıçak
+Knock → Vurmak (Kapıya Vurmak)
+Knot → Düğüm, Düğüm Atmak
+Know → Bilmek
+Knowledge → Bilgi
+Kidnap → Zorla Kaçırmak (İnsan, Hayvan vb.)
+Kidney → Böbrek
+Kin → Aile, Akraba
+Knight → Silahşör, Şövalye, Satrançta At
+Knob → Tokmak, Tutacak
+Labor → İş (Elle Yapılan Zor İş), İş Gücü
+Lack → Eksiklik
+Ladder → Merdiven
+Lady → Hanımefendi
+Lake → Göl
+Lamb → Kuzu, Kuzu, Koyun Eti
+Lame → Topal, Sıkıcı
+Lamp → Lamba
+Land → Kara, Arazi
+Land (v) → İniş Yapmak, Konmak (Uçak vs.)
+Language → Dil (Yabancı Dil vs.)
+Large → Geniş
+Last → Son, Sonunda, Geçmiş
+Last → Devam Etmek, Sürmek, Yeterli Olmak
+Late → Geç, Sonu (Late September: Eylül Sonu vs.)
+Laugh → Gülmek
+Laundry → Yıkanacak Çamaşır, Çamaşırhane
+Law → Yasa, Kanun, Hukuk
+Lawyer → Avukat
+Lay → Yatmak
+Lazy → Tembel
+Legal → Yasal
+Lead → Önderlik Etmek, Önde Gitmek, Yol Göstermek
+Leader → Önder, Lider
+Leadership → Önderlik
+Leaf → Yaprak
+Lean → Yaslanmak
+Learn → Öğrenmek
+Least → En Az
+Leather → Deri
+Leave → Terk Etmek
+Left → Sol
+Leg → Bacak
+Legacy → Miras
+Lemon → Limon
+Lend → Ödünç Vermek
+Lens → Lens
+Less → Daha Az
+Lesson → Ders
+Let → Bırakmak
+Letter → Mektup, Harf
+Letter Box → Mektup Kutusu, Posta Kutusu
+Level → Düzey, Seviye
+Liberal → Liberal
+Liberty → Serbest Olmak
+Library → Kitaplık, Kütüphane
+License → Lisans (Ehliyet vs.)
+Lie → Yalan, Yalan Söylemek
+Lie → Yatmak
+Life → Yaşam, Hayat
+Lift → Asansör, Yukarı Kaldırmak
+Light → Işık, Açık (Renklerde), Hafif
+Like → Hoşlanmak, Gibi
+Likely → Büyük Olasılıkla
+Line → Çizgi, Satır, Sıra
+Link → Birleştirmek
+Lip → Dudak
+Liquid → Sıvı
+List → Liste
+Listen → Dinlemek
+Little → Küçük
+Live → Canlı
+Live → Yaşamak
+Life → Hayat
+Living → Yaşam Biçimi
+Load → Yük, Yüklemek, Silah Doldurmak
+Local → Bölgesel, Yerel
+Lock → Kilitlemek, Kilit
+Long → Uzun
+Look → Bakmak, Bakış
+Loose → Bol, Bağsız
+Lose → Kaybetmek
+Loss → Kayıp, Zarar
+Lot → Mülk
+Loud → Yüksek Sesli
+Love → Sevgi, Aşk
+Lovely → Sevimli
+Low → Alçak, Düşük
+Lower → Aşağıya İndirmek
+Luck → Şans
+Lucky → Şanslı
+Luggage → Valiz, Yük
+Lunch → Öğle Yemeği
+Lung → Akciğer
+Luxury → Lüks
+Label → Etiket
+Laboratory → Laboratuvar
+Ladle → Kepçe (Yemek)
+Lamppost → Sokak Lambası
+Lampshade → Abajur
+Lane → Dar Yol, Şerit (Otoyolda vs.)
+Lash → Kamçı / Bir Şeyi Ani ve Hızlı Sallamak
+Launch → Bir Şeye Başlamak / Roket Fırlatmak
+Laundry-basket → Çamaşır Sepeti
+League → Birlik, Lig
+Leak → Akıntı, Sızmak
+Lease → Belirli Bir Zaman İçin Kiralama
+Lecture → Ders, Konferans Vermek
+Length → Uzunluk
+Lettuce → Salata, Kıvırcık
+Lever → Kaldıraç, Manivela
+Liar → Yalancı
+Lick → Yalamak
+Lid → Kapak
+Lighter → Çakmak
+Limit → Hat, Sınır, Limit
+Liquidate → Tasfiye Etmek
+Literature → Edebiyat
+Litter → Çöp, Dağınıklık
+Liver → Karaciğer
+Loaf → Bütün Ekmek / Vakti Boşa Geçirmek
+Loan → Ödünç Vermek, Borç Vermek, Borç
+Lobster → İstakoz
+Locate → Kurmak, Yerleştirmek
+Lonely → Yalnız, Kimsiz
+Lorry → Kamyon
+Loyal → Sadık
+Loyalty → Sadakat, Bağlılık
+Memorial → Bir Kişinin Anısına Yapılan Yapıt
+Memorize → Ezberlemek
+Memory → Hafıza
+Men → Adamlar
+Mend → Tamir Etmek
+Mental → Zihinsel
+Mention → Bahsetmek
+Merchant → Tüccar
+Mercy → Merhamet
+Mere → Sadece, Yalnızca
+Merry → Mutlu
+Mess → Kargaşa, Dağınıklık
+Message → Mesaj
+Meter → Ölçek
+Method → Metot
+Meter → Metre
+Mice → Fareler
+Middle → Orta
+Midnight → Gece Yarısı
+Military → Askeri
+Milk → Süt
+Mill → Değirmen
+Mimic → Taklit Etmek (Birini)
+Mind → Akıl
+Mind → Birine Bakmak, Dert Etmek
+Mine → Benim / Maden Ocağı / Mayın
+Minimum → En az
+Minister → Bakan / Büyükelçi
+Minor → Önemli, Ufak, Minör
+Minority → Azınlık
+Minus → Eksi
+Minute → Dakika
+Mirror → Ayna
+Miss → Özlemek / Kaçırmak / Kayıp
+Miss → Kadın
+Missile → Füze, Fırlatılan Cisim
+Mission → Özel Bir Görev İçin Yolculuk, Misyon
+Mistake → Hata
+Misunderstand → Yanlış Anlamak
+Mix → Karıştırmak, Karışmak
+Model → Model (Model Araba, Manken vs.)
+Moderate → Ilımlı
+Modern → Modern, Çağdaş
+Modest → Alçakgönüllü, Ilımlı
+Moment → An
+Monday → Pazartesi
+Money → Para
+Monkey → Maymun
+Month → Ay (Takvim Ayı)
+Moon → Ay
+More → Daha Fazla
+Morning → Sabah
+Mosque → Cami
+Most → En Çok
+Mother → Anne
+Motor → Motor
+Mountain → Dağ
+Mouse → Fare
+Mouth → Ağız
+Move → Hareket Etmek, Ettirmek
+Movement → Hareket
+Much → Çok (Miktarca)
+Mud → Çamur
+Murder → Cinayet
+Music → Müzik
+Must → Zorunluluk
+My → Benim
+Mystery → Esrar, Bilinmezlik
+Machine → Makine
+Machine-gun → Makineli Tüfek
+Mad → Deli
+Madam → Madam, Bayan
+Magic → Büyü
+Mail → Posta
+Main → Ana, Esas
+Make → Yapmak, Çeşit
+Make -up → Makyaj, Uydurmak
+Male → Erkek
+Man → Adam
+Manage → Yönetmek, Kontrol Etmek
+Management → Yönetim, İdare
+Manager → Yönetici, Menajer
+Manner → Tavır, Görgü
+Many → Birçok
+Map → Harita
+March → Marş, Yürüyüş, Mart (Ayı)
+Mark → İşaretlemek, İşaret
+Market → Pazar, Piyasa
+Marry → Evlenmek
+Marvelous → Şahane, Harika
+Mask → Maske
+Mass → Kütle, Kitle, Kalabalık
+Master → Uzman, Şef, Sahip, Hoca
+Match → Uymak, Uyuşmak / Maç / Kibrit
+Material → Malzeme, Kumaş
+Matter → Mesele, Önemli Olmak
+May → Mayıs, (Maybe: Belki)
+Me → Bana, Beni
+Meal → Yemek
+Mean → Anlamına Gelmek / Cimri
+Mean → Ortalama
+Meaning → Anlam
+Means → Stil, Yol / Yardım / Para
+Meantime → Bu Arada
+Meanwhile → Bu Arada, Aynı Anda
+Measure → Ölçü
+Meat → Et
+Mechanic → Mekanik
+Medal → Madalya
+Medicine → İlaç, Tıp
+Meet → Buluşmak, Karşılamak
+Meeting → Toplantı, Miting
+Melody → Ezgi, Melodi
+Melon → Kavun
+Melt → Erimek
+Member → Üye
+Memorable → Unutulmayacak
+Memorandum → Not
+Magazine → Magazin
+Magnet → Mıknatıs
+Magnificent → ihtişam
+Magnifying-glass → Büyüteç
+Maid → Kadın Hizmetçi
+Maintain → Bakım Onarım / Eski Halinde Koruma / Destekleme
+Major → Büyük, Önemli, Binbaşı (Orduda)
+Majority → Çoğunluk
+Maniac → Manyak
+Manual → El İle Yapılan
+Manufacture → Üretmek (Fab. vs.)
+Margin → Marj, Katkı
+Marmalade → Marmelat
+Massacre → Katliam, Katliam Yapmak
+Massive → Çok Büyük, Ağır
+Mat → Hasır, Paspas
+Mate → Arkadaş
+Mathematics → Matematik
+Mattress → Yatak, Sedir
+Mature → Olgun, Ergin / Vadesi Gelen (Ödeme)
+Maturity → Olgunluk Zamanı / Vade Zamanı
+Maximum → Maksimum, Azami
+Meadow → Çayır, Mera
+Mechanic → Makinci, Mekanik
+Medical → Tıbbi
+Merely → Sadece, Ancak
+Merge → Birleşerek Kaybolma, Konsolidasyon (Şirket, Devlet)
+Merit → Hak Etmek / Değmek
+Might → Kuvvet, Kudret, Belki (Might Be: Az İhtimali.)
+Microphone → Mikrofon
+Mild → Hafif, Yumuşak, Ilık
+Millet → Darı
+Millionaire → Milyoner
+Mince → Kıyma (Et.), Kıymak
+Miracle → Mucize
+Miser → Hasıs, Cimri
+Miserable → Sefil
+Misery → Sefalet
+Mislay → Nereye Koyduğunu Unutmak
+Mobile → Oynak, Hareketli
+Moisture → Nem
+Mole → Köstebek / Vücuttaki Ben
+Monument → Anıt, Abide
+Mood → Mizac, Ruh Hali
+Moral → Ahlak
+Morale → Moral
+Mortgage → İpotek
+Mosquito → Sivrisinek
+Moss → Yosun (Nemli Yerlerde Olan)
+Motion → Hareket, Önerme
+Motive → Motive Olmak, Güdü
+Mud-guard → Çamurluk
+Multiply → Çarpmak (Matematik) / Çoğalmak
+Murmur → Mırıldanmak / Uğultu
+Muscle → Pazu, Kas
+Museum → Müze
+Mushroom → Mantar
+Muslim → Müslüman
+Mustard → Hardal
+Mute → Sessiz, Dilsiz
+Mutter → Mırıldanmak, Kısık Sesle Söylenmek
+Nail → Tırnak / Çivi
+Name → İsim
+Narrow → Dar
+Nation → Ulus
+National → Ulusal
+Native → Yerli
+Natural → Doğal
+Nature → Doğa
+Near → Yakın
+Necessary → Gerekli
+Necessity → Gerekliilik
+Neck → Boyun, Ense
+Necklace → Kolye
+Need → Gereksinim, İhtiyaç
+Needle → İğne, Şiş
+Neglect → İhmal Etmek
+Neighbour → Komşu
+Neither → Hiçbiri
+Neither…Nor… → Ne O..Ne Öbürü
+Nephew → Yeğen (Erkek)
+Nerve → Sinir
+Nervous → Gergin
+Nest → Yuva, Kuş Yuvası
+Net → Ağ
+Never → Hiçbir Zaman, Asla
+Nevertheless → Buna Rağmen, Hala, Ama
+New → Yeni
+News → Haber
+Newspaper → Gazete
+Next → En Yakın, Bir Sonraki, Ertesi
+Nice → Hoş
+Niece → Yeğen (Kız)
+Night → Gece
+No → Hayır
+Noble → Soylu
+Nobody → Hiç Kimse
+Noise → Gürültü
+None → Hiçbiri
+Noon → Öğle Zamanı
+Normal → Normal
+North → Kuzey
+Nose → Burun
+Not → Değil
+Nothing → Hiçbir Şey
+Notice → Duyuru / Dikkatini Çekmek
+November → Kasım
+Now → Şimdi
+Nowadays → Bugünlerde
+Nowhere → Hiçbir Yer
+Nuisance → Sıkıntı, Dert
+Number → Sayı, Numaralandırmak
+Nurse → Hemşire, Hasta Bakıcı
+Nut → Kuruyemiş (Fındık vs.)
+Napkin → Peçete
+Narrate → Anlatmak, Söylemek
+Nasty → Pis, Kötü Kokulu, Hoş Olmayan
+Naughty → Yaramaz
+Negotiate → Görüşmek, Müzakere
+Network → Şebeke, Çalışma Ağı
+Nickname → Takma isim, Lakap
+Nightmare → Kabus
+Nominate → Aday Göstermek
+Nonsense → Saçmalık
+Novel → Roman
+Nude → Çıplak
+Oak → Meşe
+Obey → Söz Dinlemek, İtaat Etmek
+Object (v) → İtiraz Etmek
+Object (n) → Nesne, Obje / Amaç
+Observation → Gözlem
+Observe → Gözlem Yapmak
+Obvious → Aşikar
+Occupation → Meslek, İşgal
+Occupy → İşgal Etmek, Oturmak, Kaplamak
+Ocean → Okyanus
+October → Ekim (Ayı)
+Of → İyelik Eki, -nin
+Off → Yok Olma /, Eksilmek / Kapatmak
+Offend → Kızdırmak, İncitmek (Birini)
+Offer → Teklif Etmek
+Office → Ofis
+Officer → Subay, Memur
+Official → Resmi
+Often → Sık Sık
+Oil → Yağ / Petrol
+Old → Eski, Yaşlı
+On → Üzerinde
+Once → Bir Kez, Bir An Önce
+One → Bir
+Only → Sadece, Yalnızca
+Open → Açık, Açmak
+Operate → Çalışmak
+Operation → Operasyon, Ameliyat
+Operator → Operatör
+Opinion → Düşünce
+Opportunity → Fırsat
+Opposite → Zıt, Ters
+Optimist → İyimser
+Or → Veya
+Orange → Portakal / Turuncu
+Order → Emir, Sipariş, Düzen, Sıra
+Ordinary → Sıradan, Normal
+Organ → Org, Organ, Organizasyon, Kuruluş
+Organize → Organize Etmek
+Origin → Köken, Orijin
+Other → Diğer
+Otherwise → Başka Türlü, Yoksa, Aksi Takdirde
+Our → Bizim
+Out → Dışarı
+Out-of-date → Modası Geçmiş, Eski
+Outside → Dışarı
+Oven → Fırın
+Over → Üstünde / Bitmek
+Overcome → Üstesinden Gelmek
+Owe → Borçlu Olmak
+Own → Sahip Olmak
+Owner → Sahip
+Ox → Boğa
+Occur → Olmak
+Odd → Tuhaf, Acayip
+Old-fashioned → Eski Moda
+Onion → Soğan
+Option → Seçme, Seçenek
+Oral → Sözlü
+Orbit → Yörünge
+Original → Orijinal, İlk, Yeni
+Owl → Baykuş
+Oxygen → Oksijen
+Oyster → İstiridye
+Pack → Paketlemek
+Packet → Paket
+Page → Sayfa
+Pain → Acı, Ağrı
+Painful → Ağrılı
+Paint → Boyamak, Boya
+Painter → Ressam, Boyacı
+Pair → Çift
+Palace → Saray
+Pale → Soluk, Solgun (Renk)
+Pan → Tava
+Panic → Panik
+Paper → Kağıt, Gazete, Evrak, Kimlik
+Paradise → Cennet
+Paragraph → Paragraf
+Parcel → Parça
+Parent → Anne-Baba, Ebeveyn
+Park → Park, Park Etmek
+Parliament → Parlamento
+Parrot → Papağan
+Part → Kısım, Bölüm, Ayırmak
+Particular → Yalnız, Özel, Titiz
+Partner → Ortak, Partner
+Part-time → Yarım Gün
+Party → Parti
+Pass → Geçmek, Geçirmek
+Passage → Pasaj
+Passenger → Yolcu
+Passport → Pasaport
+Password → Parola
+Past → Geçmiş
+Patience → Sabır
+Patient (adj.) → Sabırlı
+Patient (n) → Hasta
+Pathetic → Acınası
+Pay → Ödemek
+Payment → Ödeme
+Peace → Barış
+Pear → Armut
+Peculiar → Garip
+Pen → Tükenmez Kalem
+Penalty → Ceza
+Pencil → Kurşun Kalem
+People → Halk, İnsanlar
+Pepper → Biber
+Per → Her
+Perfect → Kusursuz, Yetkin
+Perform → Çalışmak, Uygulamak
+Performance → Performans
+Perhaps → Belki
+Permission → İzin
+Permit → İzin Vermek, İzin Kağıdı
+Person → Kişi
+Personality → Kişilik
+Persuade → İkna Etmek
+Petrol → Petrol
+Phone → Telefon
+Photo → Fotoğraf
+Piano → Piyano
+Pick → Seçmek
+Picture → Resim
+Pie → Pasta, Turta
+Piece → Parça
+Pig → Domuz
+Pigeon → Güvercin
+Pile → Üst Üste Koymak
+Pill → Hap
+Pilot → Pilot
+Pin → Toplu İğne
+Pine → Çam
+Pineapple → Ananas
+Pink → Pembe
+Pipe → Boru / Pipo / Flüt
+Pity → Acımak (What A Pity: Ne Yazık)
+Place → Yer / Yerleştirmek
+Plain → Açık, Ortada, Düz
+Plan → Plan, Planlama
+Plane → Uçak
+Planet → Gezegen
+Plant → Bitki
+Plantation → Ekili Yer
+Plate → Tabak
+Play → Oynamak / Çalmak (Bir Müzik Aletini)
+Player → Oyuncu, Çalan
+Pleasant → Keyifli, Zevkli
+Please → Lütfen
+Pleasure → Zevk
+Plenty → Çok Sayıda
+Plough → Toprağı Sürmek
+Plug → Fiş, Banyo Tıkacı
+Plus → Artı
+Pocket → Cep
+Poem → Şiir
+Poet → Şair
+Poetry → Şiirler, Şairlik, Şiirle İlgili
+Point → Nokta, Uç
+Poison → Zehir
+Police → Polis
+Policy → Poliçe, Yönetim İlkesi, Politika
+Polish → Parlatmak
+Polite → Kibar
+Political → Politik
+Politician → Politikacı, Politikayla Uğraşan
+Politics → Politik
+Pool → Havuz
+Poor → Fakir, Yoksul, Zavallı
+Population → Nüfus
+Pork → Domuz Eti
+Port → Liman
+Portrait → Portre
+Position → Durum, Konum
+Positive → Emin, Kesin / Olumlu
+Possess → Sahip Olmak
+Possession → Sahiplik
+Possibility → Olasılık
+Possible → Olası, Mümkün
+Post → Posta, İşaret, Devriye Gezmek (Askerde)
+Postpone → Ertelemek
+Pot → Tencere
+Potato → Patates
+Pour → Dökmek, Akıtmak
+Powder → Toz, Pudra
+Power → Güç
+Powerful → Güçlü
+Practical → Pratik
+Practice → Alıştırma
+Practise → Alıştırma Yapmak
+Praise → Övmek
+Pray → Dua Etmek
+Preach → Vaaz Vermek
+Predict → Tahmin Etmek
+Prefer → Yeğlemek, Tercih Etmek
+Pregnant → Hamile
+Prejudice → Önyargı
+Preparation → Hazırlık
+Prepare → Hazırlamak
+Presence → Varlık
+Present → Burada, Mevcut, Şimdiki, Armağan
+Present → Sunmak
+President → Başkan
+Press → Baskı, Ütüleme, Basın
+Press → Baskı Yapmak, Basmak
+Pressure → Basınç, Baskı
+Pretend → Gibi Gözükmek, Taklit Yapmak
+Pretty → Sevimli, Oldukça
+Prevent → Korumak
+Previous → Önceki
+Price → Fiyat
+Pride → Onur, Gurur
+Priest → Rahip
+Prince → Prens
+Principal → En Önemli, Prensip, Ana Para (Borçta)
+Print → Basmak (Harfler vs.), İz
+Prison → Hapishane
+Prisoner → Mahkum, Esir
+Private → Özel
+Prize → Ödül
+Probable → Olası
+Problem → Sorun, Problem
+Produce → Üretmek
+Product → Ürün
+Production → Üretim
+Profession → Meslek
+Profit → Kar
+Programme → Program
+Progress → Gelişim
+Promise → Söz Vermek
+Pronounce → Telaffuz Etmek
+Proof → Kanıt
+Proper → Uygun, Doğru
+Property → Mal, Mülk (Bir Kişinin Sahip Olduğu), Eşya
+Proposal → Plan, Öneri
+Propose → Planını Açıklamak, Evlilik Teklif Etmek
+Protect → Korumak
+Protest → Protesto
+Proud → Gururlu
+Prove → Kanıtlamak
+Provide → Sağlamak, Tedarik Etmek
+Pub → Pab, Biraahane
+Public → Halk (Public Sector: Devlet Sektörü)
+Publish → Basım (Bir Yayını)
+Pull → Çekmek
+Pullover → Kazak / Arabayı Durdurmak, Kenara Çekmek
+Pump → Pompa
+Punch → Delmek / Yumruklamak
+Punish → Cezalandırmak
+Pupil → Öğrenci / Gözbebeği
+Puppet → Kukla
+Puppy → Genç Köpek
+Purchase → Satın Almak
+Purple → Mor
+Purpose → Amaç
+Push → İtmek
+Put → Koymak
+Puzzle → Bulmaca, Problem
+Pyjamas → Pijama
+Packed → Kalabalık, Bir Sürü İnsan
+Palm → Avuç / Palmiye Ağacı
+Panel → Panel
+Pants → Don / Pantolon
+Parachute → Paraşüt
+Parade → Resmi Geçit
+Participate → Başkalarıyla Birlikte Çalışma, Oynama, Katılma
+Passive → Pasif, Eylemsiz
+Pasta → Makarna (Hamurdan Yapılan Şeyler)
+Paste → Beyaz Tutkal, Macun, Hamur
+Pastime → Hoş İyi Zaman
+Path → Patika, Küçük Yol
+Patrol → Devriye
+Patron → Destekleyici Kişi, Devamlı Müşteri
+Pause → Mola, Ara
+Paw → Hayvan Pençesi
+Pea → Bezelye
+Peach → Şeftali
+Peak → Zirve, Tepe
+Peanut → Yer Fıstığı
+Pearl → İnci
+Peasant → Çiftçi, Köylü Kesim
+Pedal → Pedal
+Pedestrian → Yaya Giden
+Peel → Kabuk Soymak (Meyve)
+Penknife → Çakı
+Pension → Emekli Maaşı
+Perfume → Parfüm
+Peril → Büyük Tehlike
+Period → Çağ, Devir / Adet (Hali)
+Permanent → Devamlı, Sürekli
+Persist → Devam Etmek
+Pessimist → Kötümser
+Petrol Station → Benzinlik
+Philosophy → Felsefe
+Physical → Fiziksel
+Picket → Grev Gözcüsü, Fabrika Önünde Bekleme
+Pickle → Turşu
+Pillow → Yastık
+Pillowcase → Yastık Kılıfı
+Pincers → Kerpeten, Kıskaç (Yengeç vs.)
+Pinch → Çimdiklemek, Sıkıştırmak (Kapıya vb.)
+Pioneer → Öncü
+Pistol → Tabanca
+Pity → Acımak (What A Pity: Ne Yazık)
+Plastic → Plastik
+Platform → Platform / Yüksekçe Yer, Kürsü / Peron
+Playground → Oyun Sahası
+Plum → Erik / Bonbon Şekeri
+Plumber → Musluk Tamircisi
+Pole → Kutup, Direk, Kazık
+Porcelain → Porselen
+Porter → Hamal, Kapıcı
+Postage → Posta Ücreti
+Poverty → Fakirlik
+Precious → Kıymetli, Çok Sevilen
+Precisely → Kesinlikle, Tam Manasıyla
+Prescription → Reçete
+Preserve → Korumak, Konserve Yapmak
+Primarily → Ana Olarak
+Primary → Önceleri, Eskiden / Ana, İlk Okul
+Primitive → İlkel / Basit / Modası Geçmiş
+Priority → Öncelik
+Privilege → İmtiyaz
+Process → İşlem
+Prohibit → Yasaklamak
+Promote → İlerleme, Terfi Etme, Tanıtım (Ürün vs. Satış İçin)
+Promotion → Terfi
+Propeller → İleriye Yürüten Şey, Vapur, Uçak Pervanesi
+Proportion → Orantı
+Prosecute → Kovalamak, Dava Açmak, Suçlamak
+Proverb → Atasözü
+Provocation → Kışkırtma
+Provoke → Kışkırtmak, Kızdırmaya Neden Olmak
+Publicity → İlan, Reklam, Yayımlama
+Pull Up → Aracı Durdurmak
+Pulse → Nabız, Vuruş
+Pumpkin → Kabak
+Punctual → Tam Zamanında
+Pure → Saf, Temiz
+Purse → Küçük El Çantası
+Pyramid → Piramit
+Quality → Nitelik, Kalite
+Quantity → Miktar
+Quarrel → Tartışmak, Atışmak
+Quarter → Çeyrek
+Queen → Kraliçe
+Question → Soru / Sormak
+Queue → Sıra, Kuyruk
+Quick → Çabuk
+Quiet → Sessiz, Sakin, Huzurlu
+Quite → Hemen Hemen, Yaklaşık Olarak
+Quiz → Küçük Test
+Qualified → Ehliyetli, Kalifiye
+Quota → Kota, Kontenjan
+Quote → Aktarma, Söyleme
+Rabbit → Tavşan
+Race → Irk
+Race → Yarış, Yarışmak
+Radiator → Radyatör
+Radio → Radyo
+Rail → Ray
+Railway → Tren Yolu
+Rain → Yağmur
+Raincoat → Yağmurluk
+Raise → Yükseltmek, Zam Yapmak, Yetiştirmek
+Range → Aralık, Alan
+Rank → Sıra, Rütbe, Sosyal Sınıf
+Rapid → Çabuk, Hızlı
+Rare → Nadir
+Rate → Hız, Oran
+Rather → Epey, Çok Değil
+Raw → Ham, Çiğ
+Razor → Ustura, Tıraş Makinesi
+Reach → Erişmek
+Read → Okumak
+Ready → Hazır
+Realize → Fark Etmek
+Really → Gerçekten
+Reason → Neden, Akıl
+Reasonable → Makul
+Recall → Anımsamak
+Receipt → Makbuz
+Receive → Almak, Karşılamak
+Recent → Yakın Zamanda Olan
+Reception → Resmi Davet, Resepsiyon
+Recognize → Tanımak
+Recommend → Tavsiye Etmek
+Record → Kayıt, Plak, Rekor
+Recover → İyileşmek, (Kaybedilen Bir Şeyi) Bulmak
+Red → Kırmızı, Kızıl
+Reduce → Azaltmak
+Reflect → Yansıtmak
+Refugee → Tehlikeden Kaçan, Kazazede
+Refuse → Reddetmek
+Regard → Dikkat, Düşünce, Bakmak, İnanmak
+Regret → Üzgün Olmak, Pişman Olmak
+Regular → Düzenli, Olağan
+Reject → Kabul Etmemek
+Relation → İlişki, Akrabalık
+Relationship → İlişki, İletişim
+Relative → Akraba, Göreceli
+Relax → Rahatlamak, Gevşemek
+Release → Serbest Bırakmak, Gevşetmek
+Relief → Rahatlama
+Relieve → Uzaklaştırmak
+Religion → Din
+Remain → Geriye Kalmak, Yerinde Durmak
+Remark → Belirtmek, Açıklama
+Remarkable → Dikkate Değer
+Remember → Unutmamak, Anımsamak
+Remind → Anımsatmak
+Remote → Uzak
+Remove → Uzaklaştırmak
+Rent → Kiralamak
+Repair → Onarmak
+Repay → Geri Ödemek
+Repeat → Tekrarlamak
+Replace → Yeniden Yerleştirmek
+Replacement → Yerleştirme
+Reply → Yanıtlamak, Yanıt
+Report → Rapor, Rapor Etmek
+Represent → Temsil Etmek
+Representative → Temsilci
+Republic → Cumhuriyet
+Request → Rica Etmek, Rica
+Require → Gereksinmek
+Rescue → Kurtarmak
+Reserve → Rezerv, Rezervasyon Yaptırmak
+Resign → İstifa Etmek
+Resist → Karşı Koymak
+Respect → Saygı Duymak
+Respectable → Saygıdeğer
+Responsible → Sorumlu
+Rest → Dinlenmek
+Rest → Geriye Kalan
+Restaurant → Restoran, Lokanta
+Result → Sonuç
+Retire → Emekli Olmak
+Return → Geri Dönmek
+Revenge → Öç Almak, İntikam
+Reward → Ödül
+Rib → Kaburga
+Ribbon → Kurdele, Şerit
+Rice → Pirinç
+Rich → Zengin
+Ride → Ata Binmek, Bisiklete Binmek
+Ridiculous → Gülünç, Saçma
+Right → Hak, Doğru, Haklı, Sağ Taraf
+Ring → Yüzük, Halka
+Ring → Çalmak (Zil Çalması), Telefon Etmek
+Ripe → Olgun, Ham Değil
+Rise → Yükselmek
+Risk → Risk
+Risky → Riskli
+River → Nehir
+Road → Yol
+Roar → Kükreme
+Roast → Rosto, Fırında Pişirmek
+Rob → Soygun Yapmak
+Rock → Kaya, Sallanmak
+Role → Rol
+Roll → Yuvarlanmak
+Roof → Çatı
+Room → Oda
+Root → Kök
+Rope → Halat, İp
+Rose → Gül, Pembe
+Rough → Kaba
+Round → Yuvarlak
+Row → Sıra, Gürültü
+Row (v) → Kürek Çekmek
+Royal → Kraliçeye Ait
+Rub → Sürmek, Sürtmek, Ovmak
+Rubbish → Çöp, Saçma
+Rude → Kaba
+Rule → Yönetmek, Kural
+Ruler → Kural Koyucu, Yönetici, Cetvel
+Rumble → Gürlemek
+Run → Koşmak, Çalıştırmak (Fabrika, Şirket vs.)
+Runaway → Kaçak, Kontrol Dışı (Runaway Increase In Prices)
+Rush → Çabuk Davranmak
+Racket → Raket
+Radar → Radar
+Railing → Bahçe Parmaklıkları
+Ram → Koç, Vurmak, Toslamak
+Rash → Hızlı, Acele, Çil
+Rat → Sıçan
+Rear → Yetiştirmek (İnsan, Kuş, Bitki), Arka, Arka Taraf
+Recession → Duraklama, Geriileme, Ekonomide Durgunluk
+Recipe → Yemek Tarifi
+Recollect → Hatırlamak
+Reconcile → Uzlaşma, Anlaşma Yapmak
+Reconciliation → Uzlaşma
+Referee → Hakem
+Referendum → Referandum, Halk Oylaması
+Refill → Doldurmak
+Refreshments → Sandviç, Tost, İçecek (Gar, İstasyon Gibi Yerlerde)
+Refrigerator → Buzdolabı
+Region → Bölge
+Register → Kütük, Sicil, Kayıt, (Register Post: Taahhütlü Mektup)
+Regulation → Yönetmelik, Yasa
+Relate → Anlatmak, Nakletmek (Formal Tell)
+Relevant → Bağıntılı, Konuyla İlişkili
+Reliable → Güvenilir
+Reluctant → İsteksiz
+Remedy → Çare
+Reputation → İtibar, Ün
+Research → Araştırma
+Resent → Hoşlanmamak, Kızmak
+Reside → Oturmak, İkamet Etmek
+Resident → Bölgede Yaşayan, Oturan
+Respond → Cevap Vermek
+Restore → Geri Verme, Yeniden Kullanıma Açma
+Restrict → Sınırlamak
+Reverse → Ters, Arka
+Revise → Tekrar Gözden Geçiip Düzeltmek
+Revolution → Devrim
+Rifle → Tüfek
+Rocket → Roket
+Route → Rota
+Rubber → Silgi, Lastik
+Rug → Küçük Halı, Kilim
+Ruin → Harabe, Yıkım Mahvetme
+Safe → Güvenli
+Sail → Yelken Açmak
+Same → Aynı
+Sand → Kum
+Sit → Oturmak
+Save → Kurtarmak
+Saw → Testere
+Say → Söylemek
+Scale → Ölçek
+School → Okul
+Science → Bilim
+Scientist → Bilim Adamı
+Score → Skor
+Sea → Deniz
+Seat → Koltuk`;
+
+// Parse list
+const vocabulary=rawList.split("\n").filter(Boolean).map(line=>{
+  const [en,tr]=line.split("→").map(s=>s.trim());
+  return {english:en,turkish:tr};
+});
+
+// Speech setup
+let voiceEnabled=true;
+let enVoices=[];
+
+function loadVoices(){
+  enVoices=speechSynthesis.getVoices().filter(v=>v.lang.toLowerCase().startsWith("en"));
+}
+speechSynthesis.onvoiceschanged=loadVoices;
+loadVoices();
+
+function speak(word){
+  if(!voiceEnabled) return;
+  if(!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(word);
+  u.lang="en-US";
+  u.rate=0.9;
+  if(enVoices.length) u.voice=enVoices[0];
+  speechSynthesis.speak(u);
+}
+
+function toggleAudio(){
+  voiceEnabled=!voiceEnabled;
+  document.getElementById("audioToggle").textContent=voiceEnabled?"🔊 Voice: On":"🔇 Voice: Off";
+  if(!voiceEnabled) speechSynthesis.cancel();
+}
+
+// Helpers
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function sample(arr,n){return shuffle(arr).slice(0,n);}
+
+let currentSet=[],answered=0,correct=0,wrong=0;
+
+function generateNewSet(){
+  // Kelime listesini karıştır ve 15 seç
+  currentSet=shuffle(vocabulary).slice(0,15).map((w,i)=>({...w,idx:i}));
+  answered=0;correct=0;wrong=0;
+  renderList();
+  updateStats();
+  document.getElementById("final").style.display="none";
+  document.getElementById("final").innerHTML="";
+}
+
+function renderList(){
+  const mount=document.getElementById("list");
+  mount.innerHTML="";
+  currentSet.forEach(w=>{
+    const card=document.createElement("div");
+    card.className="card";
+    card.id=`card-${w.idx}`;
+    const optsId=`opts-${w.idx}`;
+    const resId=`res-${w.idx}`;
+    card.innerHTML=`
+      <div class="english" onclick="onWordClick('${optsId}','${w.english.replace(/'/g,"\\'")}')">
+        ${w.english}
+        <span class="speak-icon">🔊</span>
+      </div>
+      <div class="options" id="${optsId}"></div>
+      <div class="result" id="${resId}"></div>
+    `;
+    mount.appendChild(card);
+
+    // Yanlış cevaplar (2 adet)
+    const wrongs=sample(vocabulary.filter(x=>x.turkish!==w.turkish),2).map(x=>x.turkish);
+    const options=shuffle([w.turkish,...wrongs]);
+    const optsDiv=card.querySelector("#"+optsId);
+    options.forEach(opt=>{
+      const btn=document.createElement("button");
+      btn.className="option";
+      btn.textContent=opt;
+      btn.dataset.correct=opt===w.turkish ? "true" : "false";
+      btn.onclick=()=>checkAnswer(w,btn,optsDiv,resId);
+      optsDiv.appendChild(btn);
+    });
+  });
+}
+
+function onWordClick(optsId,word){
+  const optsDiv=document.getElementById(optsId);
+  if(optsDiv.style.display==="block") return;
+  optsDiv.style.display="block";
+  speak(word);
+}
+
+function checkAnswer(word,clickedBtn,optsDiv,resId){
+  // Eğer zaten cevaplanmışsa çık
+  if(clickedBtn.disabled) return;
+  
+  const isCorrect=clickedBtn.dataset.correct==="true";
+  const card=optsDiv.closest(".card");
+  const res=document.getElementById(resId);
+  
+  // Tüm butonları devre dışı bırak
+  optsDiv.querySelectorAll("button").forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.correct==="true"){
+      b.classList.add("correct-answer");
+    }
+    if(b===clickedBtn && !isCorrect){
+      b.classList.add("wrong-answer");
+    }
+  });
+  
+  answered++;
+  if(isCorrect){
+    correct++;
+    res.innerHTML="✅ <span class='correct'>Correct!</span>";
+    card.classList.add("answered-correct");
+    // Doğru sesi
+    if(voiceEnabled && "speechSynthesis" in window){
+      const u=new SpeechSynthesisUtterance("Correct!");
+      u.lang="en-US";
+      u.rate=0.9;
+      speechSynthesis.speak(u);
+    }
+  } else {
+    wrong++;
+    res.innerHTML=`❌ <span class='incorrect'>Wrong!</span><br/>Correct: <b>${word.turkish}</b>`;
+    card.classList.add("answered-wrong");
+  }
+  updateStats();
+  if(answered===15) showFinal();
+}
+
+function updateStats(){
+  const score=Math.round((correct/Math.max(1,answered))*100);
+  document.getElementById("stat-c").textContent=correct;
+  document.getElementById("stat-w").textContent=wrong;
+  document.getElementById("stat-s").textContent=`${answered?score:0}%`;
+  document.getElementById("stat-a").textContent=answered;
+  document.getElementById("progressFill").style.width=`${(answered/15)*100}%`;
+}
+
+function showFinal(){
+  const score=Math.round((correct/15)*100);
+  let msg="Practice more! 💪";
+  let emoji="📚";
+  if(score>=90){ msg="Excellent! 🌟"; emoji="🏆"; }
+  else if(score>=70){ msg="Very good! 👏"; emoji="⭐"; }
+  else if(score>=50){ msg="Not bad! 😊"; emoji="👍"; }
+  
+  const fin=document.getElementById("final");
+  fin.style.display="block";
+  fin.innerHTML=`
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="font-size:48px;">${emoji}</div>
+      <div>
+        <div class="score-big">${score}%</div>
+        <div style="font-weight:700;font-size:18px;">${msg}</div>
+        <div class="detail">✅ Correct: ${correct} | ❌ Wrong: ${wrong} | 📝 Total: 15</div>
+      </div>
+    </div>
+  `;
+}
+
+// run first
+generateNewSet();
+</script>
+</body>
+</html>

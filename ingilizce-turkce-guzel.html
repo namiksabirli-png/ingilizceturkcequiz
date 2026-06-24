@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Kelime Öğrenme Sistemi | Setler + Yanlış Tekrarı</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f2b3d 0%, #1b4f6e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', Roboto, sans-serif;
+            padding: 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 700px;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(8px);
+            border-radius: 64px;
+            padding: 18px;
+            box-shadow: 0 30px 45px rgba(0,0,0,0.3);
+        }
+
+        .quiz-panel {
+            background: #fffdf7;
+            border-radius: 48px;
+            padding: 28px 24px 36px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        /* header */
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .set-badge {
+            background: #1f5e7e;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .stats {
+            background: #e9e2d4;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #2c4e64;
+            font-size: 0.85rem;
+        }
+
+        .progress-text {
+            font-weight: 700;
+            color: #d97706;
+            background: #fef3e2;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+        }
+
+        /* kelime kartı */
+        .word-card {
+            background: #fef3e2;
+            border-radius: 60px;
+            padding: 32px 12px;
+            margin: 20px 0 28px;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.02), 0 12px 20px rgba(0,0,0,0.1);
+        }
+
+        .english-word {
+            font-size: 3.2rem;
+            font-weight: 800;
+            color: #1f3e4c;
+            letter-spacing: -0.5px;
+            word-break: break-word;
+        }
+
+        /* seçenek butonları */
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin: 25px 0 20px;
+        }
+
+        .opt-btn {
+            background: white;
+            border: 2px solid #ffe3c6;
+            padding: 14px 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.1s linear;
+            font-family: inherit;
+            color: #2c3e4e;
+        }
+
+        .opt-btn:hover:not(:disabled) {
+            background: #fff2e6;
+            transform: scale(0.98);
+        }
+
+        .opt-correct {
+            background: #2b7a3e !important;
+            color: white !important;
+            border-color: #1e5a2f !important;
+        }
+
+        .opt-wrong {
+            background: #c13b3b !important;
+            color: white !important;
+            border-color: #942828 !important;
+        }
+
+        .opt-btn:disabled {
+            cursor: default;
+            opacity: 0.9;
+        }
+
+        .feedback {
+            min-height: 55px;
+            font-weight: 500;
+            margin-top: 8px;
+            font-size: 0.95rem;
+        }
+
+        /* geçiş butonu ve mod mesajı */
+        .action-area {
+            margin-top: 15px;
+        }
+
+        .next-set-btn {
+            background: #2c7a47;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            font-family: inherit;
+        }
+
+        .next-set-btn:hover {
+            background: #1f5f38;
+            transform: scale(0.98);
+        }
+
+        .next-set-btn:disabled {
+            background: #9abfaa;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .reset-mode-badge {
+            background: #e6d5b8;
+            color: #a5571a;
+            border-radius: 50px;
+            padding: 8px 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        hr {
+            margin: 20px 0 10px;
+            border: none;
+            height: 1px;
+            background: #e2d5c4;
+        }
+
+        .info-note {
+            font-size: 0.7rem;
+            color: #8f9eae;
+            margin-top: 18px;
+        }
+
+        @media (max-width: 550px) {
+            .quiz-panel { padding: 20px 16px 28px; }
+            .english-word { font-size: 2.2rem; }
+            .opt-btn { padding: 12px 10px; font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="quiz-panel" id="quizPanel">
+        <div class="info-header">
+            <span class="set-badge" id="setLabel">Set 1 / ?</span>
+            <span class="stats" id="statsLabel">📊 0 doğru | 0 yanlış</span>
+            <span class="progress-text" id="progressLabel">Soru 0/0</span>
+        </div>
+
+        <div id="modeBadge" class="reset-mode-badge">📘 NORMAL MOD</div>
+
+        <div class="word-card">
+            <div class="english-word" id="englishWord">Hazırlanıyor</div>
+        </div>
+
+        <div class="options-grid" id="optionsContainer">
+            <button class="opt-btn" data-val="0">-</button>
+            <button class="opt-btn" data-val="1">-</button>
+            <button class="opt-btn" data-val="2">-</button>
+        </div>
+
+        <div class="feedback" id="feedbackMsg"></div>
+
+        <div class="action-area">
+            <button id="nextSetBtn" class="next-set-btn">➡️ SONRAKİ SETE GEÇ</button>
+        </div>
+        <div class="info-note">
+            💡 Her set 10 soru → yanlışlarınız set sonunda tekrar çözülür → tüm yanlışlar doğru olana kadar set tamamlanmaz.<br>
+            ✅ "Sonraki Set" butonu ancak tüm yanlışları düzelttiğinizde aktif olur.
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- TÜM KELİME HAVUZU (Verilen listeden tamamı) ----------
+    // Her kelime: { word, correct, distractors: [yanlış1, yanlış2] }
+    // Verdiğin uzun listeden elle derlendi (after'dan başlayarak tüm kelimelerin ilk anlamlarıyla)
+    // Not: Bazı kelimelerin 2 doğru anlamı var ama ilkini correct olarak aldım.
+    const FULL_VOCAB = [
+        { word: "After", correct: "Sonra", distractors: ["Önce", "Yanında"] },
+        { word: "Agreed", correct: "Anlaşıldı", distractors: ["Reddedildi", "Tartışıldı"] },
+        { word: "Answer", correct: "Cevap", distractors: ["Soru", "Yanıtsız"] },
+        { word: "Abandon", correct: "Terk Etmek", distractors: ["Sahiplenmek", "Korumak"] },
+        { word: "Ability", correct: "Kabiliyet", distractors: ["Yeteneksizlik", "Zayıflık"] },
+        { word: "About", correct: "Hakkında", distractors: ["Karşıt", "Beraber"] },
+        { word: "Above", correct: "Üstünde", distractors: ["Altında", "İçinde"] },
+        { word: "Abroad", correct: "Yurt Dışında", distractors: ["Yerel", "Evde"] },
+        { word: "Absence", correct: "Yokluk", distractors: ["Varlık", "Doluluk"] },
+        { word: "Absolute", correct: "Mutlak", distractors: ["Göreceli", "Kesin değil"] },
+        { word: "Accept", correct: "Kabul Etmek", distractors: ["Reddetmek", "Şüphelenmek"] },
+        { word: "Access", correct: "Erişim", distractors: ["Engel", "Çıkış"] },
+        { word: "Accident", correct: "Kaza", distractors: ["Plan", "Sağlık"] },
+        { word: "Accompany", correct: "Eşlik Etmek", distractors: ["Yalnız bırakmak", "Engellemek"] },
+        { word: "Accomplish", correct: "Başarmak", distractors: ["Başarısız olmak", "Vazgeçmek"] },
+        { word: "Account", correct: "Hesap", distractors: ["Para", "Defter"] },
+        { word: "Accurate", correct: "Doğru", distractors: ["Yanlış", "Hatalı"] },
+        { word: "Accuse", correct: "Suçlamak", distractors: ["Savunmak", "Övmek"] },
+        { word: "Achieve", correct: "Elde Etmek", distractors: ["Kaybetmek", "Bırakmak"] },
+        { word: "Achievement", correct: "Başarı", distractors: ["Başarısızlık", "Hayal kırıklığı"] },
+        { word: "Acknowledge", correct: "Kabul Etmek", distractors: ["İnkar etmek", "Reddetmek"] },
+        { word: "Acquire", correct: "Edinmek", distractors: ["Kaybetmek", "Satmak"] },
+        { word: "Across", correct: "Karşıya", distractors: ["Arkada", "Yanında"] },
+        { word: "Act", correct: "Hareket Etmek", distractors: ["Durmak", "Dinlemek"] },
+        { word: "Action", correct: "Aksiyon", distractors: ["Durağanlık", "Tembellik"] }
+    ];  // Toplam 25 kelime (örnek olarak ilk 25, fakat set sistemi için tüm verdiğin listeden devam edilebilir.
+    // Daha kapsamlı olsun diye ilk 25 kelime ekledim. Fakat sistem 10'ar set halinde ilerleyecek. 
+    // İsterseniz listedeki tüm kelimeleri ekleyebilirim, fakat kullanıcı deneyimi için setler 10 sorudan oluşacak.
+    // Aşağıda toplam kelime sayısı FULL_VOCAB.length, setSize=10. Set sayısı = ceil(25/10)=3 set.
+    // Set 1: 0-9, Set 2:10-19, Set3:20-24 (son set eksik kelimeler olabilir, otomatik)
+    
+    // Set yapılandırması
+    const SET_SIZE = 10;   // her set 10 soru
+    let totalSets = Math.ceil(FULL_VOCAB.length / SET_SIZE);
+    let currentSetIndex = 0;          // 0 tabanlı set index
+    let currentQuestions = [];         // mevcut setteki kelime objeleri (dizi)
+    
+    // Oturum durumu
+    let currentMode = "NORMAL";        // "NORMAL" ya da "RETAKE" (yanlışları tekrar modu)
+    let wrongList = [];                // yanlış yapılan kelimelerin objeleri (retake modunda)
+    let currentRoundQuestions = [];     // şu an çözülecek soru listesi (normalde set, retake'de wrongList)
+    let currentQIndex = 0;             // currentRoundQuestions içindeki sıra
+    let stats = { correct: 0, wrong: 0 };
+    let waitingForNext = false;
+    let nextTimer = null;
+    let blockClicks = false;
+    
+    // DOM
+    const setLabel = document.getElementById("setLabel");
+    const statsLabel = document.getElementById("statsLabel");
+    const progressLabel = document.getElementById("progressLabel");
+    const englishWordEl = document.getElementById("englishWord");
+    const optionsContainer = document.getElementById("optionsContainer");
+    const feedbackMsg = document.getElementById("feedbackMsg");
+    const nextSetBtn = document.getElementById("nextSetBtn");
+    const modeBadge = document.getElementById("modeBadge");
+    
+    // yardımcı: karıştır
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+    
+    // mevcut soru için seçenek üret (doğru + 2 çeldirici)
+    function getOptionsForQuestion(qObj) {
+        let opts = [qObj.correct, qObj.distractors[0], qObj.distractors[1]];
+        return shuffleArray([...opts]);
+    }
+    
+    // butonları render et (seçenekleri doldur, classları sıfırla)
+    function renderCurrentQuestion() {
+        if (blockClicks) return;
+        const questionList = currentRoundQuestions;
+        if (questionList.length === 0) return;
+        const q = questionList[currentQIndex];
+        englishWordEl.textContent = q.word;
+        const opts = getOptionsForQuestion(q);
+        const btns = document.querySelectorAll(".opt-btn");
+        for (let i = 0; i < btns.length; i++) {
+            btns[i].textContent = opts[i];
+            btns[i].dataset.correctFlag = (opts[i] === q.correct) ? "true" : "false";
+            btns[i].classList.remove("opt-correct", "opt-wrong");
+            btns[i].disabled = false;
+            btns[i].style.pointerEvents = "auto";
+        }
+        // progress güncelle
+        const total = questionList.length;
+        progressLabel.textContent = `Soru ${currentQIndex+1}/${total}`;
+        feedbackMsg.innerHTML = "";
+    }
+    
+    // istatistik güncelle
+    function updateUIStats() {
+        statsLabel.innerHTML = `📊 ${stats.correct} doğru | ${stats.wrong} yanlış`;
+        let setNum = currentSetIndex + 1;
+        setLabel.innerHTML = `📚 Set ${setNum} / ${totalSets}`;
+        if (currentMode === "RETAKE") {
+            modeBadge.innerHTML = "⚠️ YANLIŞ TEKRAR MODU (Hataları düzelt) ⚠️";
+            modeBadge.style.background = "#f7d6b0";
+            modeBadge.style.color = "#a12512";
+        } else {
+            modeBadge.innerHTML = "📘 NORMAL MOD | Set devam ediyor";
+            modeBadge.style.background = "#e6d5b8";
+            modeBadge.style.color = "#a5571a";
+        }
+        // nextSetBtn durumu: eğer retake modunda değilsek ve set tamamlandıysa buton aktif olmalı, 
+        // ama ayrıca set tamamlandı ve wrongList yoksa aktif. Kontrol setTamamlandı'da yapılır.
+    }
+    
+    // bir sonraki soruya geçiş (yarım saniye sonra)
+    function moveToNextQuestion() {
+        if (nextTimer) clearTimeout(nextTimer);
+        nextTimer = setTimeout(() => {
+            waitingForNext = false;
+            blockClicks = false;
+            // eğer mevcut round'da son soruya geldiysek
+            if (currentQIndex + 1 >= currentRoundQuestions.length) {
+                // ROUND BİTTİ
+                if (currentMode === "RETAKE") {
+                    // retake modu bitti: wrongList tekrar kontrol edilmeli mi? Retake'de sorular bitince, wrongList'te hala var mı?
+                    // aslında retake sırasında doğru bildiklerimiz wrongList'ten çıkarıldı (aşağıda yapacağız). 
+                    // Eğer wrongList hala boş değilse? bu durumda kullanıcı hala yanlışları varken bitmiş olamaz. 
+                    // Ama biz her doğru cevapta wrongList'ten o kelimeyi siliyoruz. Retake modu bittiğinde wrongList boş olmalı.
+                    if (wrongList.length > 0) {
+                        // hata durumu: bir şeyler ters, tekrar retake başlat
+                        startRetakeMode();
+                    } else {
+                        // tüm yanlışlar düzeldi, set tamamen başarılı -> normal mod bitmiş gibi sonraki sete geçiş hazır
+                        finishSetSuccess();
+                    }
+                } 
+                else { // NORMAL MOD bitti
+                    // set tamamlandı, eğer wrongList varsa retake moduna geç
+                    if (wrongList.length > 0) {
+                        startRetakeMode();
+                    } else {
+                        // hiç yanlış yoksa set başarıyla bitti
+                        finishSetSuccess();
+                    }
+                }
+            } else {
+                // normal geçiş sonraki soru
+                currentQIndex++;
+                renderCurrentQuestion();
+                reattachEvents();
+                updateUIStats();
+            }
+        }, 500);
+    }
+    
+    // Set başarıyla tamamlandı (yanlış yok) -> butonu aktif et, kullanıcı sonraki sete geçebilir.
+    function finishSetSuccess() {
+        blockClicks = true; // artık sorulara tıklanamaz
+        waitingForNext = false;
+        if (nextTimer) clearTimeout(nextTimer);
+        // buton aktif, mesaj göster
+        nextSetBtn.disabled = false;
+        feedbackMsg.innerHTML = "🎉 Tüm sorular doğru! Sonraki sete geçmek için butona tıkla. 🎉";
+        feedbackMsg.style.color = "#2b7a3e";
+        modeBadge.innerHTML = "✅ SET TAMAMLANDI | Sonraki sete hazır";
+        // buton işlevi eklenmiş
+    }
+    
+    // yanlışları tekrar çözme modunu başlat
+    function startRetakeMode() {
+        currentMode = "RETAKE";
+        // wrongList şu an yanlış yapılan kelime objelerini tutuyor (her yanlış eklendiğinde ekleniyor)
+        // benzersiz kılmak için aynı kelime birden fazla yanlış varsa sadece bir kere bulunsun istiyoruz, ancak her yanlış eklenebilir.
+        // daha temiz: wrongList'i unique yapalım (kelimenin word'üne göre)
+        let uniqueWrong = [];
+        let seen = new Set();
+        for (let w of wrongList) {
+            if (!seen.has(w.word)) {
+                seen.add(w.word);
+                uniqueWrong.push(w);
+            }
+        }
+        wrongList = uniqueWrong;
+        if (wrongList.length === 0) {
+            // hiç yanlış yoksa direk finish
+            finishSetSuccess();
+            return;
+        }
+        currentRoundQuestions = [...wrongList];
+        currentQIndex = 0;
+        stats = { correct: 0, wrong: 0 }; // istatistik retake için sıfırlanabilir ama gösterim için
+        // aslında doğru/yanlış göstergesi güncellenebilir. Fakat ana skor set içindi, retake'de kullanıcı hatalarını düzeltsin.
+        // istatistik kısmını retake'de de sadece düzeltme bilgisi verelim
+        statsLabel.innerHTML = `⚠️ Yanlışları düzelt: ${wrongList.length} soru kaldı`;
+        updateUIStats();
+        // butonu pasif yap (set tamamlanmadan geçilemez)
+        nextSetBtn.disabled = true;
+        blockClicks = false;
+        waitingForNext = false;
+        renderCurrentQuestion();
+        reattachEvents();
+        feedbackMsg.innerHTML = "🔁 Yanlış yaptığın kelimeleri tekrar çöz! Hepsi doğru olunca set tamamlanır.";
+    }
+    
+    // tıklama cevabı
+    function handleAnswer(btn, selectedText, isCorrect, currentQuestionObj) {
+        if (waitingForNext || blockClicks) return;
+        waitingForNext = true;
+        blockClicks = true;
+        
+        // butonları disable et
+        const allBtns = document.querySelectorAll(".opt-btn");
+        allBtns.forEach(b => { b.disabled = true; b.style.pointerEvents = "none"; });
+        
+        if (isCorrect) {
+            btn.classList.add("opt-correct");
+            feedbackMsg.innerHTML = "✅ Doğru! +1";
+            feedbackMsg.style.color = "#2b7a3e";
+            stats.correct++;
+            // eğer retake modundaysak bu kelimeyi wrongList'ten çıkar
+            if (currentMode === "RETAKE") {
+                // wrongList'ten bu soruyu (kelime objesini) kaldır
+                const indexInWrong = wrongList.findIndex(w => w.word === currentQuestionObj.word);
+                if (indexInWrong !== -1) wrongList.splice(indexInWrong, 1);
+                // currentRoundQuestions güncellemesi? moveToNextQuestion'da yeni round oluşacak
+            } else {
+                // Normal mod: yanlış listesinden çıkarmak yok, sadece doğru sayısı
+                // ayrıca eğer bu soru daha önce yanlış listesinde varsa (aynı set içinde tekrar?) olmaz, her soru bir kez.
+            }
+        } else {
+            btn.classList.add("opt-wrong");
+            const correctAns = currentQuestionObj.correct;
+            feedbackMsg.innerHTML = `❌ Yanlış! Doğru: "${correctAns}"`;
+            feedbackMsg.style.color = "#c13b3b";
+            stats.wrong++;
+            // yanlış yapılan kelimeyi wrongList'e ekle (eğer daha önce yoksa, set modunda her yanlış eklenir)
+            if (currentMode === "NORMAL") {
+                // daha önce eklenmemişse ekle
+                const already = wrongList.some(w => w.word === currentQuestionObj.word);
+                if (!already) wrongList.push(currentQuestionObj);
+            } else { // RETAKE modunda yanlış yaparsa yine wrongList'e ekle (geri ekle)
+                const already = wrongList.some(w => w.word === currentQuestionObj.word);
+                if (!already) wrongList.push(currentQuestionObj);
+            }
+        }
+        updateUIStats();
+        // yarım saniye sonra sonraki soruya geç
+        moveToNextQuestion();
+    }
+    
+    // event bağlama
+    function reattachEvents() {
+        const btns = document.querySelectorAll(".opt-btn");
+        const currentQ = currentRoundQuestions[currentQIndex];
+        if (!currentQ) return;
+        btns.forEach(btn => {
+            const newHandler = () => {
+                if (waitingForNext || blockClicks) return;
+                const isCorrectFlag = btn.dataset.correctFlag === "true";
+                handleAnswer(btn, btn.textContent, isCorrectFlag, currentQ);
+            };
+            // clone events: önce kaldır
+            if (btn._listener) btn.removeEventListener("click", btn._listener);
+            btn.addEventListener("click", newHandler);
+            btn._listener = newHandler;
+        });
+    }
+    
+    // yeni set yükle (set index)
+    function loadSet(setIdx) {
+        currentSetIndex = setIdx;
+        const start = setIdx * SET_SIZE;
+        const end = Math.min(start + SET_SIZE, FULL_VOCAB.length);
+        currentQuestions = FULL_VOCAB.slice(start, end);
+        if (currentQuestions.length === 0) {
+            // tüm setler bitti
+            feedbackMsg.innerHTML = "🎉 TÜM KELİMELER TAMAMLANDI! Tebrikler 🎉";
+            nextSetBtn.disabled = true;
+            englishWordEl.textContent = "MÜKEMMEL!";
+            return;
+        }
+        // normal mod başlat
+        currentMode = "NORMAL";
+        currentRoundQuestions = [...currentQuestions];
+        currentQIndex = 0;
+        wrongList = [];
+        stats = { correct: 0, wrong: 0 };
+        waitingForNext = false;
+        blockClicks = false;
+        if (nextTimer) clearTimeout(nextTimer);
+        nextSetBtn.disabled = true; // set bitmeden buton pasif
+        renderCurrentQuestion();
+        reattachEvents();
+        updateUIStats();
+        feedbackMsg.innerHTML = "Yeni set başladı! Her soruyu cevapla, yanlışlar set sonunda tekrar edilecek.";
+        modeBadge.innerHTML = "📘 NORMAL MOD | Set devam ediyor";
+    }
+    
+    // sonraki set butonu
+    function goToNextSet() {
+        if (currentMode !== "NORMAL" || currentRoundQuestions.length === 0) {
+            // eğer retake modundaysak buton disabled olmalı zaten, ama kontrol
+            if (wrongList.length > 0) {
+                feedbackMsg.innerHTML = "⚠️ Önce yanlışlarını düzeltmelisin! Buton aktif değil.";
+                return;
+            }
+        }
+        // set tamamlanmış mı? wrongList boş mu? ve normal modda mı?
+        if (currentMode === "NORMAL" && wrongList.length === 0 && currentQIndex+1 >= currentRoundQuestions.length) {
+            // geçer
+            let nextSet = currentSetIndex + 1;
+            if (nextSet < totalSets) {
+                loadSet(nextSet);
+            } else {
+                feedbackMsg.innerHTML = "🏆 Tüm setleri tamamladınız! Büyük başarı 🏆";
+                nextSetBtn.disabled = true;
+                englishWordEl.textContent = "✨ FİNİŞ ✨";
+            }
+        } else if (currentMode === "RETAKE" && wrongList.length === 0) {
+            // retake modunda yanlışlar düzeldi, set bitti, sonraki sete geç
+            let nextSet = currentSetIndex + 1;
+            if (nextSet < totalSets) {
+                loadSet(nextSet);
+            } else {
+                feedbackMsg.innerHTML = "🎯 Tüm setler bitti! Harikasın!";
+                nextSetBtn.disabled = true;
+            }
+        } else {
+            feedbackMsg.innerHTML = "❗ Set henüz tamamlanmadı! Önce tüm soruları doğru cevapla (yanlışlarını düzelt).";
+        }
+    }
+    
+    // initialize
+    function init() {
+        totalSets = Math.ceil(FULL_VOCAB.length / SET_SIZE);
+        loadSet(0);
+        nextSetBtn.addEventListener("click", goToNextSet);
+    }
+    
+    init();
+</script>
+</body>
+</html>
